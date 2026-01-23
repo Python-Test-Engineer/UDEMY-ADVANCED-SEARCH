@@ -20,3 +20,6 @@ ADD FTS index on product_name
 
 ADD FTS index on product_short_description
 
+When `ADD FTS index on product_name` has been done, populate the Documents text box with all the `product_name` each on a new line and ensure that the search button uses all these as it did before
+
+DO the same `ADD FTS index on product_short_description` but use `product_short_description` items

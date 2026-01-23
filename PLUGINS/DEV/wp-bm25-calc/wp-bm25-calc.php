@@ -104,21 +104,23 @@ class BM25_Algorithm {
     
     public function search($query) {
         $results = [];
-        
+
         foreach ($this->documents as $index => $doc) {
             $scoreData = $this->score($query, $doc, $index + 1);
-            $results[] = [
-                'index' => $index + 1,
-                'document' => $doc,
-                'score' => $scoreData['score'],
-                'details' => $scoreData['details']
-            ];
+            if ($scoreData['score'] > 0) {
+                $results[] = [
+                    'index' => $index + 1,
+                    'document' => $doc,
+                    'score' => $scoreData['score'],
+                    'details' => $scoreData['details']
+                ];
+            }
         }
-        
+
         usort($results, function($a, $b) {
             return $b['score'] <=> $a['score'];
         });
-        
+
         return $results;
     }
     
@@ -304,15 +306,13 @@ class BM25_Calculation_Plugin {
                 <div class="bm25-panel bm25-input-panel">
                     <div class="bm25-card">
                         <h2>📝 Documents</h2>
-                        <p class="description">Enter documents to search (one per line)</p>
-                        <textarea id="bm25-documents" rows="8" class="large-text">Python is a programming language
-I love programming in Python and Python is easy
-Java and C++ are programming languages</textarea>
+                        <p class="description">Documents loaded from database (one per line)</p>
+                        <textarea id="bm25-documents" rows="8" class="large-text"><?php echo esc_textarea($current_docs ?: "Python is a programming language\nI love programming in Python and Python is easy\nJava and C++ are programming languages"); ?></textarea>
                     </div>
                     
                     <div class="bm25-card">
                         <h2>🎯 Search Query</h2>
-                        <input type="text" id="bm25-query" class="regular-text" value="python programming" placeholder="Enter search terms...">
+                        <input type="text" id="bm25-query" class="regular-text" value="electric space" placeholder="Enter search terms...">
                     </div>
                     
                     <div class="bm25-card">
@@ -377,6 +377,8 @@ Java and C++ are programming languages</textarea>
         <style>
         .bm25-calc-wrap {
             max-width: 1400px;
+            font-size: 1.5rem;
+            line-height: 1.6;
         }
         
         .bm25-container {
@@ -644,6 +646,17 @@ Java and C++ are programming languages</textarea>
                 data.results.forEach((result, idx) => {
                     const rank = idx + 1;
                     const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+
+                    // Create score explanation
+                    let explanation = 'Score breakdown: ';
+                    const explanations = [];
+                    result.details.forEach(detail => {
+                        if (detail.term_score > 0) {
+                            explanations.push(`"${detail.term}" (${detail.term_score.toFixed(4)})`);
+                        }
+                    });
+                    explanation += explanations.join(' + ');
+
                     resultsHtml += `
                         <div class="result-item rank-${rank}">
                             <div class="result-header">
@@ -651,6 +664,7 @@ Java and C++ are programming languages</textarea>
                                 <span class="result-score">Score: ${result.score.toFixed(4)}</span>
                             </div>
                             <div class="result-document">Document ${result.index}: "${result.document}"</div>
+                            <div class="score-explanation">${explanation}</div>
                         </div>
                     `;
                 });
