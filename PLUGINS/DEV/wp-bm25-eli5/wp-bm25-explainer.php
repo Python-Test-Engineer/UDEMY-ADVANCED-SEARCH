@@ -955,7 +955,7 @@ FINAL SCORE = Score("machine") + Score("learning")
         <!-- CSS Styles -->
         <style>
             body, .wrap {
-                font-size: 16px;
+                font-size: 1.5rem;
                 line-height: 1.6;
             }
 
