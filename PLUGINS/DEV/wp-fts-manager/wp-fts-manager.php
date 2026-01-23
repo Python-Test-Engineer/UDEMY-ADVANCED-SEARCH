@@ -116,7 +116,10 @@ class FTS_Manager {
                                     <p class="description">
                                         <strong>Natural:</strong> Standard search with relevance ranking<br>
                                         <strong>Boolean:</strong> Use operators: +required -excluded "phrase" *wildcard<br>
-                                        +wireless -smart
+                                        +wireless -smart<br>
+                                        >budget means optional but boost relevance<br>
+                                        <strong>Examples:</strong><br>
+
 +camera 4K
 +(speaker audio) -bluetooth
 +"noise cancelling"
@@ -125,17 +128,7 @@ port*
 +desk +(standing adjustable)
 +camera -smart -security -home
 +"action camera" +waterproof
->premium <budget
-+(camera speaker) +portable -desk
-+water* +(proof resistant)
-+"ultra HD" +camera
-+(yoga fitness) -smart
-+LED >desk <floor
-+audio +(wireless bluetooth) -smart
-+"noise cancelling" +wireless -smart
-+(camera video recording) +4K
-+home +(security camera) -smart
-+desk +adjustable -standing
+>premium <br>
                                         <strong>Expansion:</strong> Automatically finds related terms
                                     </p>
                                 </td>
