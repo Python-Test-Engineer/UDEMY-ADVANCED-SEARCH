@@ -25,13 +25,13 @@ This plugin exposes a REST endpoint that reranks Full‑Text Search (FTS) and Ve
 {
   "fulltext_search": {
     "results": [
-      {"post_id": 4339, "relevance_score": 10.40, "post_title": "Collinson Facts"},
+      {"post_id": 4339, "relevance_score": 10.40, "post_title": "FOAM Facts"},
       {"post_id": 4352, "relevance_score": 1.73, "post_title": "John Bowie"}
     ]
   },
   "vector_search": {
     "results": [
-      {"post_id": 4339, "similarity_score": 0.528, "post_title": "Collinson Facts"},
+      {"post_id": 4339, "similarity_score": 0.528, "post_title": "FOAM Facts"},
       {"post_id": 4350, "similarity_score": 0.443, "post_title": "rob emmott"}
     ]
   }
@@ -42,13 +42,13 @@ This plugin exposes a REST endpoint that reranks Full‑Text Search (FTS) and Ve
 ```json
 {
   "success": true,
-  "query": "Collinson",
+  "query": "FOAM",
   "method": "reranking",
   "results": [
     {
       "position": 1,
       "post_id": 4339,
-      "post_title": "Collinson Facts",
+      "post_title": "FOAM Facts",
       "relevance_score": 10.40,
       "similarity_score": 0.528
     },
@@ -74,7 +74,7 @@ This plugin exposes a REST endpoint that reranks Full‑Text Search (FTS) and Ve
 ## Endpoint
 
 ```
-GET /wp-json/reranker/v1/reranked?query=Collinson
+GET /wp-json/reranker/v1/reranked?query=FOAM
 ```
 
 You can also POST a JSON payload containing `fulltext_search` and `vector_search` keys to rerank external data.

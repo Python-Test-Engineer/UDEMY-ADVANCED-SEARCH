@@ -39,7 +39,7 @@ class WP_Reranking_Plugin {
             $this->menu_slug,
             array($this, 'render_admin_page'),
             'dashicons-filter',
-            4.9
+           3.3
         );
     }
 
