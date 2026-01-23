@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Full Text Search Manager
+ * Plugin Name: ✅ 100 FTS MANAGER
  * Plugin URI: https://example.com/fts-manager
  * Description: Manage MySQL Full Text Search indexes and test queries with relevance rankings
  * Version: 1.0.1
@@ -32,12 +32,12 @@ class FTS_Manager {
     public function add_admin_menu() {
         add_menu_page(
             __('Full Text Search', 'fts-manager'),
-            __('FTS Manager', 'fts-manager'),
+            '100 FTS MANAGER',
             'manage_options',
             'fts-manager',
             array($this, 'render_admin_page'),
             'dashicons-search',
-            30
+            39
         );
     }
     
@@ -100,7 +100,7 @@ class FTS_Manager {
                                     <label for="search-query"><?php echo esc_html__('Search Query', 'fts-manager'); ?></label>
                                 </th>
                                 <td>
-                                    <input type="text" id="search-query" name="search_query" class="large-text" placeholder="wireless audio" required>
+                                    <input type="text" id="search-query" name="search_query" class="large-text" value="Smart" required>
                                 </td>
                             </tr>
                             <tr>
@@ -116,6 +116,26 @@ class FTS_Manager {
                                     <p class="description">
                                         <strong>Natural:</strong> Standard search with relevance ranking<br>
                                         <strong>Boolean:</strong> Use operators: +required -excluded "phrase" *wildcard<br>
+                                        +wireless -smart
++camera 4K
++(speaker audio) -bluetooth
++"noise cancelling"
+port*
++audio >wireless -smart
++desk +(standing adjustable)
++camera -smart -security -home
++"action camera" +waterproof
+>premium <budget
++(camera speaker) +portable -desk
++water* +(proof resistant)
++"ultra HD" +camera
++(yoga fitness) -smart
++LED >desk <floor
++audio +(wireless bluetooth) -smart
++"noise cancelling" +wireless -smart
++(camera video recording) +4K
++home +(security camera) -smart
++desk +adjustable -standing
                                         <strong>Expansion:</strong> Automatically finds related terms
                                     </p>
                                 </td>
@@ -481,6 +501,15 @@ class FTS_Manager {
                 }
                 
                 let html = '<h3>Search Results (' + data.results.length + ' found)</h3>';
+                
+                // Display SQL query if available
+                if (data.sql) {
+                    html += '<div style="background: #f5f5f5; border: 1px solid #ddd; padding: 10px; margin-bottom: 15px; border-radius: 3px; font-family: monospace; font-size: 12px; overflow-x: auto;">';
+                    html += '<strong>SQL Query:</strong><br>';
+                    html += data.sql;
+                    html += '</div>';
+                }
+                
                 html += '<table class="results-table">';
                 html += '<thead><tr><th>Rank</th><th>Product Name</th><th>Short Description</th><th>Relevance</th></tr></thead>';
                 html += '<tbody>';
@@ -707,7 +736,8 @@ class FTS_Manager {
         wp_send_json_success(array(
             'results' => $results,
             'max_score' => $max_score,
-            'count' => count($results)
+            'count' => count($results),
+            'sql' => $sql
         ));
     }
 }
