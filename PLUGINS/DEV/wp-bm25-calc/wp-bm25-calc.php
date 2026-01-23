@@ -193,15 +193,19 @@ class BM25_Calculation_Plugin {
     
     public function ajax_calculate() {
         check_ajax_referer('bm25_calc_nonce', 'nonce');
-        
+
         $query = sanitize_text_field($_POST['query']);
         $k1 = floatval($_POST['k1']);
         $b = floatval($_POST['b']);
+        $limit = intval($_POST['limit']);
         $documents = array_map('sanitize_text_field', $_POST['documents']);
-        
+
         $bm25 = new BM25_Algorithm($documents, $k1, $b);
-        $results = $bm25->search($query);
-        
+        $all_results = $bm25->search($query);
+
+        // Apply limit on server side
+        $results = $limit > 0 ? array_slice($all_results, 0, $limit) : $all_results;
+
         wp_send_json_success([
             'results' => $results,
             'avgdl' => $bm25->getAvgdl(),
@@ -338,7 +342,7 @@ class BM25_Calculation_Plugin {
 
                         <div class="param-group">
                             <label for="bm25-limit">
-                                <strong>Results Limit</strong> - Maximum documents to return
+                                <strong>Results Limit</strong> - Maximum non-zero documents to return
                                 <span class="description">Limit the number of ranked results shown</span>
                             </label>
                             <select id="bm25-limit">
@@ -385,7 +389,7 @@ class BM25_Calculation_Plugin {
                     <li><strong>Inverse Document Frequency (IDF)</strong>: How rare a term is across all documents</li>
                     <li><strong>Document Length</strong>: Normalizes scores based on document length</li>
                 </ul>
-                <p><strong>Formula:</strong> BM25(D, Q) = Σ IDF(qi) × (f(qi, D) × (k1 + 1)) / (f(qi, D) + k1 × (1 - b + b × |D| / avgdl))</p>
+                <p style="font-size: 1.50rem;"><strong>Formula:</strong> BM25(D, Q) = Σ IDF(qi) × (f(qi, D) × (k1 + 1)) / (f(qi, D) + k1 × (1 - b + b × |D| / avgdl))</p>
             </div>
         </div>
         
@@ -623,6 +627,7 @@ class BM25_Calculation_Plugin {
                         query: query,
                         k1: k1,
                         b: b,
+                        limit: limit,
                         documents: documents
                     },
                     success: function(response) {
@@ -689,7 +694,7 @@ class BM25_Calculation_Plugin {
                 });
                 $('#bm25-results').html(resultsHtml);
                 
-                // Display detailed calculations (use limited results for display, but all for details if limit is set)
+                // Display detailed calculations (show details for the limited results only)
                 let detailsHtml = '';
                 limitedResults.forEach((result, idx) => {
                     detailsHtml += `<h3>Document ${result.index}: "${result.document}"</h3>`;
