@@ -208,10 +208,96 @@ class BM25_Calculation_Plugin {
     }
     
     public function render_admin_page() {
+        global $wpdb;
+
+        // Handle FTS index management
+        $table_name = 'wp_products'; // Exact table name as specified
+        $message = '';
+        if (isset($_POST['delete_all_fts']) && check_admin_referer('bm25_fts_action')) {
+            // Check which indexes exist and drop them
+            $existing_indexes = $wpdb->get_results("SHOW INDEX FROM {$table_name} WHERE Index_type = 'FULLTEXT' AND Key_name IN ('fts_product_name', 'fts_product_short_description')");
+            $deleted_count = 0;
+            foreach ($existing_indexes as $index) {
+                $result = $wpdb->query("ALTER TABLE {$table_name} DROP INDEX {$index->Key_name}");
+                if ($result !== false) {
+                    $deleted_count++;
+                }
+            }
+            if ($deleted_count > 0) {
+                $message = '<div class="notice notice-success"><p>' . $deleted_count . ' FTS index(es) deleted successfully.</p></div>';
+            } else {
+                $message = '<div class="notice notice-info"><p>No FTS indexes found to delete.</p></div>';
+            }
+        }
+
+        if (isset($_POST['add_fts_product_name']) && check_admin_referer('bm25_fts_action')) {
+            $result = $wpdb->query("ALTER TABLE {$table_name} ADD FULLTEXT INDEX fts_product_name (product_name)");
+            if ($result !== false) {
+                $message = '<div class="notice notice-success"><p>FTS index on product_name added successfully.</p></div>';
+                // Load product names into documents
+                $products = $wpdb->get_results("SELECT product_name FROM {$table_name} WHERE product_name IS NOT NULL AND product_name != ''");
+                $docs = '';
+                foreach ($products as $product) {
+                    $docs .= $product->product_name . "\n";
+                }
+                update_option('bm25_calc_documents', trim($docs));
+            } else {
+                $message = '<div class="notice notice-error"><p>Failed to add FTS index on product_name. ' . $wpdb->last_error . '</p></div>';
+            }
+        }
+
+        if (isset($_POST['add_fts_product_short_description']) && check_admin_referer('bm25_fts_action')) {
+            $result = $wpdb->query("ALTER TABLE {$table_name} ADD FULLTEXT INDEX fts_product_short_description (product_short_description)");
+            if ($result !== false) {
+                $message = '<div class="notice notice-success"><p>FTS index on product_short_description added successfully.</p></div>';
+                // Load short descriptions into documents
+                $products = $wpdb->get_results("SELECT product_short_description FROM {$table_name} WHERE product_short_description IS NOT NULL AND product_short_description != ''");
+                $docs = '';
+                foreach ($products as $product) {
+                    $docs .= $product->product_short_description . "\n";
+                }
+                update_option('bm25_calc_documents', trim($docs));
+            } else {
+                $message = '<div class="notice notice-error"><p>Failed to add FTS index on product_short_description. ' . $wpdb->last_error . '</p></div>';
+            }
+        }
+
+        // Get current FTS indexes
+        $indexes = $wpdb->get_results("SHOW INDEX FROM {$table_name} WHERE Index_type = 'FULLTEXT'");
+        $current_docs = get_option('bm25_calc_documents', '');
+
         ?>
         <div class="wrap bm25-calc-wrap">
             <h1>🔍 BM25 Search Ranking Calculator</h1>
             <p class="description">Educational demonstration of the BM25 algorithm with interactive controls</p>
+
+            <?php echo $message; ?>
+
+            <!-- FTS Index Management Section -->
+            <div class="bm25-card">
+                <h2>🗄️ FTS Index Management for wp_products Table</h2>
+
+                <h3>Current Full-Text Search Indexes</h3>
+                <?php if (!empty($indexes)): ?>
+                    <ul>
+                        <?php foreach ($indexes as $index): ?>
+                            <li><?php echo esc_html($index->Key_name); ?> on <?php echo esc_html($index->Column_name); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php else: ?>
+                    <p>No FTS indexes found.</p>
+                <?php endif; ?>
+
+                <h3>Manage Indexes</h3>
+                <form method="post">
+                    <?php wp_nonce_field('bm25_fts_action'); ?>
+                    <p>
+                        <input type="submit" name="delete_all_fts" class="button button-secondary" value="DELETE ALL FTS INDEXES">
+                        <input type="submit" name="add_fts_product_name" class="button button-primary" value="ADD FTS index on product_name">
+                        <input type="submit" name="add_fts_product_short_description" class="button button-primary" value="ADD FTS index on product_short_description">
+                    </p>
+                </form>
+            </div>
             
             <div class="bm25-container">
                 <!-- Left Panel: Input Controls -->
