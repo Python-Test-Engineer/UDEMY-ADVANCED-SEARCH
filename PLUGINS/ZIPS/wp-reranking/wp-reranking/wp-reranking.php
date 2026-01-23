@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: ✅ 20.2 WP RERANKING
+ * Plugin Name: ✅ 100 WP RERANKING
  * Description: Reranks hybrid search results from FTS and Vector responses.
  * Version: 1.0.0
  * Author: Craig West
@@ -34,12 +34,12 @@ class WP_Reranking_Plugin {
         // Admin menu item for the reranker test page.
         add_menu_page(
             'Reranker',
-            '20.2 RERANKER',
+            '100 RERANKER',
             'manage_options',
             $this->menu_slug,
             array($this, 'render_admin_page'),
             'dashicons-filter',
-            4.9
+            34
         );
     }
 

@@ -34,7 +34,7 @@ class FTS_Teaching_Plugin {
             'fts-teaching',
             array($this, 'render_admin_page'),
             'dashicons-search',
-            30
+            38
         );
     }
     

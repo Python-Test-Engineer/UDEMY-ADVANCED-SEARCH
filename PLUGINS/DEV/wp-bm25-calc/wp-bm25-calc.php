@@ -161,7 +161,7 @@ class BM25_Calculation_Plugin {
             'bm25-calculation',           // Menu slug
             [$this, 'render_admin_page'], // Callback
             'dashicons-search',           // Icon
-            30                            // Position
+            37                           // Position
         );
     }
     

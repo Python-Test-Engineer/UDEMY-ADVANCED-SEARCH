@@ -30,12 +30,12 @@ class BM25_Search_Plugin {
     public function add_admin_menu() {
         add_menu_page(
             'BM25 Search Analyzer',           // Page title
-            '100 BM25 Search',                     // Menu title
+            '100 BM25 SEARCH',                     // Menu title
             'manage_options',                  // Capability
             'bm25-search-analyzer',            // Menu slug
             array($this, 'display_admin_page'), // Callback
             'dashicons-search',                // Icon
-            30                                 // Position (level 30)
+            31                              // Position (level 30)
         );
     }
     
