@@ -335,6 +335,21 @@ class BM25_Calculation_Plugin {
                             <input type="number" id="bm25-b" step="0.05" min="0" max="1" value="0.75">
                             <span class="param-value">0.75</span>
                         </div>
+
+                        <div class="param-group">
+                            <label for="bm25-limit">
+                                <strong>Results Limit</strong> - Maximum documents to return
+                                <span class="description">Limit the number of ranked results shown</span>
+                            </label>
+                            <select id="bm25-limit">
+                                <option value="5">5 results</option>
+                                <option value="10" selected>10 results</option>
+                                <option value="20">20 results</option>
+                                <option value="50">50 results</option>
+                                <option value="100">100 results</option>
+                                <option value="0">All results</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <button type="button" id="bm25-calculate" class="button button-primary button-large">
@@ -581,6 +596,7 @@ class BM25_Calculation_Plugin {
                 const query = $('#bm25-query').val();
                 const k1 = $('#bm25-k1').val();
                 const b = $('#bm25-b').val();
+                const limit = parseInt($('#bm25-limit').val());
                 const documentsText = $('#bm25-documents').val();
                 const documents = documentsText.split('\n').filter(d => d.trim());
                 
@@ -611,13 +627,13 @@ class BM25_Calculation_Plugin {
                     },
                     success: function(response) {
                         if (response.success) {
-                            displayResults(response.data, query, k1, b);
+                            displayResults(response.data, query, k1, b, limit);
                         }
                     }
                 });
             });
             
-            function displayResults(data, query, k1, b) {
+            function displayResults(data, query, k1, b, limit) {
                 // Display statistics
                 const statsHtml = `
                     <div class="stats-grid">
@@ -640,10 +656,13 @@ class BM25_Calculation_Plugin {
                     </div>
                 `;
                 $('#bm25-stats').html(statsHtml);
-                
+
+                // Apply limit to results
+                const limitedResults = limit > 0 ? data.results.slice(0, limit) : data.results;
+
                 // Display ranked results
                 let resultsHtml = '';
-                data.results.forEach((result, idx) => {
+                limitedResults.forEach((result, idx) => {
                     const rank = idx + 1;
                     const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
 
@@ -670,11 +689,11 @@ class BM25_Calculation_Plugin {
                 });
                 $('#bm25-results').html(resultsHtml);
                 
-                // Display detailed calculations
+                // Display detailed calculations (use limited results for display, but all for details if limit is set)
                 let detailsHtml = '';
-                data.results.forEach((result, idx) => {
+                limitedResults.forEach((result, idx) => {
                     detailsHtml += `<h3>Document ${result.index}: "${result.document}"</h3>`;
-                    
+
                     result.details.forEach(detail => {
                         detailsHtml += `
                             <div class="term-calc">
@@ -689,7 +708,7 @@ class BM25_Calculation_Plugin {
                             </div>
                         `;
                     });
-                    
+
                     detailsHtml += `<p><strong>Total BM25 Score: ${result.score.toFixed(4)}</strong></p><hr>`;
                 });
                 $('#bm25-details').html(detailsHtml);
