@@ -1,18 +1,3 @@
-Absolutely, Craig — this is already a strong explanation. What you’ve written is clear, friendly, and practical. To turn it into a **full lecture** that really lands with students (especially WordPress/MySQL developers), I can expand it with:
-
-- A smoother narrative flow  
-- More intuition and analogies  
-- Visual mental models  
-- A short historical context  
-- A “why BM25 still matters today” section  
-- A comparison to TF‑IDF  
-- A mini‑exercise you can give them  
-- A closing summary that reinforces the mental model  
-
-Below is an enhanced, lecture‑ready version that keeps your content but elevates it into a polished teaching module.
-
----
-
 # 🔍 **Understanding BM25 Scores: Why Negative Numbers Are Totally Normal**  
 *A lecture for developers learning modern search ranking*
 
