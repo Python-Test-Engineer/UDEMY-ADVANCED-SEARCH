@@ -167,25 +167,6 @@ BM25 is essentially a **smarter, more realistic TF‑IDF**.
 
 ---
 
-# 🧪 **Mini Exercise for Students**
-
-Ask them to compute IDF for a term appearing in:
-
-- 1 out of 10 documents  
-- 5 out of 10  
-- 9 out of 10  
-
-Then ask:
-
-- Which one is positive?  
-- Which one is zero?  
-- Which one is negative?  
-- Which one should rank highest?  
-
-This reinforces the intuition beautifully.
-
----
-
 # 🧠 **Why BM25 Still Matters in 2026**
 
 Even with vector search, embeddings, and RAG:
