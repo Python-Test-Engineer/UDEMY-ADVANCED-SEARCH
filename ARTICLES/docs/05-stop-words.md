@@ -4,16 +4,15 @@ The stopword list is loaded and searched for full-text queries using the server 
 
 Case sensitivity of stopword lookups depends on the server collation. For example, lookups are case-insensitive if the collation is utf8mb4_0900_ai_ci, whereas lookups are case-sensitive if the collation is utf8mb4_0900_as_cs or utf8mb4_bin.
 
-Stopwords for InnoDB Search Indexes
 
-Stopwords for MyISAM Search Indexes
+## Stopwords for InnoDB Search Indexes
 
-Stopwords for InnoDB Search Indexes
 InnoDB has a relatively short list of default stopwords, because documents from technical, literary, and other sources often use short words as keywords or in significant phrases. For example, you might search for “to be or not to be” and expect to get a sensible result, rather than having all those words ignored.
 
 To see the default InnoDB stopword list, query the Information Schema INNODB_FT_DEFAULT_STOPWORD table.
 
-mysql> SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_DEFAULT_STOPWORD;
+SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_DEFAULT_STOPWORD;
+
 +-------+
 | value |
 +-------+
@@ -55,11 +54,12 @@ mysql> SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_DEFAULT_STOPWORD;
 | www   |
 +-------+
 36 rows in set (0.00 sec)
+
 To define your own stopword list for all InnoDB tables, define a table with the same structure as the INNODB_FT_DEFAULT_STOPWORD table, populate it with stopwords, and set the value of the innodb_ft_server_stopword_table option to a value in the form db_name/table_name before creating the full-text index. The stopword table must have a single VARCHAR column named value. The following example demonstrates creating and configuring a new global stopword table for InnoDB.
 
 -- Create a new stopword table
-CREATE TABLE my_stopwords(value VARCHAR(30)) ENGINE = INNODB;
 
+CREATE TABLE my_stopwords(value VARCHAR(30)) ENGINE = INNODB;
 Query OK, 0 rows affected (0.01 sec)
 
 -- Insert stopwords (for simplicity, a single stopword is used in this example)
