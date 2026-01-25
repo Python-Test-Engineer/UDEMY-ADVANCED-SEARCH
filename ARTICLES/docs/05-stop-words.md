@@ -58,18 +58,18 @@ mysql> SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_DEFAULT_STOPWORD;
 To define your own stopword list for all InnoDB tables, define a table with the same structure as the INNODB_FT_DEFAULT_STOPWORD table, populate it with stopwords, and set the value of the innodb_ft_server_stopword_table option to a value in the form db_name/table_name before creating the full-text index. The stopword table must have a single VARCHAR column named value. The following example demonstrates creating and configuring a new global stopword table for InnoDB.
 
 -- Create a new stopword table
+CREATE TABLE my_stopwords(value VARCHAR(30)) ENGINE = INNODB;
 
-mysql> CREATE TABLE my_stopwords(value VARCHAR(30)) ENGINE = INNODB;
 Query OK, 0 rows affected (0.01 sec)
 
 -- Insert stopwords (for simplicity, a single stopword is used in this example)
 
-mysql> INSERT INTO my_stopwords(value) VALUES ('Ishmael');
+INSERT INTO my_stopwords(value) VALUES ('Ishmael');
 Query OK, 1 row affected (0.00 sec)
 
 -- Create the table
 
-mysql> CREATE TABLE opening_lines (
+CREATE TABLE opening_lines (
 id INT UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
 opening_line TEXT(500),
 author VARCHAR(200),
@@ -79,7 +79,7 @@ Query OK, 0 rows affected (0.01 sec)
 
 -- Insert data into the table
 
-mysql> INSERT INTO opening_lines(opening_line,author,title) VALUES
+INSERT INTO opening_lines(opening_line,author,title) VALUES
 ('Call me Ishmael.','Herman Melville','Moby-Dick'),
 ('A screaming comes across the sky.','Thomas Pynchon','Gravity\'s Rainbow'),
 ('I am an invisible man.','Ralph Ellison','Invisible Man'),
@@ -93,12 +93,13 @@ Records: 8  Duplicates: 0  Warnings: 0
 
 -- Set the innodb_ft_server_stopword_table option to the new stopword table
 
-mysql> SET GLOBAL innodb_ft_server_stopword_table = 'test/my_stopwords';
+SET GLOBAL innodb_ft_server_stopword_table = 'test/my_stopwords';
 Query OK, 0 rows affected (0.00 sec)
 
 -- Create the full-text index (which rebuilds the table if no FTS_DOC_ID column is defined)
 
-mysql> CREATE FULLTEXT INDEX idx ON opening_lines(opening_line);
+CREATE FULLTEXT INDEX idx ON opening_lines(opening_line);
+
 Query OK, 0 rows affected, 1 warning (1.17 sec)
 Records: 0  Duplicates: 0  Warnings: 1
 Verify that the specified stopword ('Ishmael') does not appear by querying the Information Schema INNODB_FT_INDEX_TABLE table.
@@ -106,10 +107,10 @@ Verify that the specified stopword ('Ishmael') does not appear by querying the I
 Note
 By default, words less than 3 characters in length or greater than 84 characters in length do not appear in an InnoDB full-text search index. Maximum and minimum word length values are configurable using the innodb_ft_max_token_size and innodb_ft_min_token_size variables. This default behavior does not apply to the ngram parser plugin. ngram token size is defined by the ngram_token_size option.
 
-mysql> SET GLOBAL innodb_ft_aux_table='test/opening_lines';
+SET GLOBAL innodb_ft_aux_table='test/opening_lines';
 Query OK, 0 rows affected (0.00 sec)
 
-mysql> SELECT word FROM INFORMATION_SCHEMA.INNODB_FT_INDEX_TABLE LIMIT 15;
+SELECT word FROM INFORMATION_SCHEMA.INNODB_FT_INDEX_TABLE LIMIT 15;
 +-----------+
 | word      |
 +-----------+
@@ -130,6 +131,7 @@ mysql> SELECT word FROM INFORMATION_SCHEMA.INNODB_FT_INDEX_TABLE LIMIT 15;
 | man       |
 +-----------+
 15 rows in set (0.00 sec)
+
 To create stopword lists on a table-by-table basis, create other stopword tables and use the innodb_ft_user_stopword_table option to specify the stopword table that you want to use before you create the full-text index.
 
 Stopwords for MyISAM Search Indexes
