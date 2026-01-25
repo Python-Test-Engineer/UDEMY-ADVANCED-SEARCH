@@ -1,8 +1,12 @@
-PLUGINS\DEV\wp-search-signals
+PLUGINS\DEV\wp-search-signals\wp-search-signals.php
 
-Do not display first 5 posts.
+Events to log:
 
-Create an input field with query
-Use https://mydigitalagent.co.uk/hybrid/wp-json/search/v1/search?query= with input value to get results, display just 3 as boxes with title and content
+1. User enters search query and clicks run: 
 
-Have a debug output that lists the event and meta details that will be saved
+    event_name: event_search
+    enter query in query field and list of post ids only in results
+
+2. Record all hovers over textbox of post as event_hover and event_meta_details to ahve the post id  and label as it does currently
+
+3. Record all clicks of 'Record Click' button with event_click as event name and post id  and label as it does currently

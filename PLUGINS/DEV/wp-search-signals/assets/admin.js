@@ -45,7 +45,7 @@
         debugContainer.prepend(entry);
     };
 
-    const sendEvent = (eventName, payload) => {
+    const sendEvent = (eventName, payload, options = {}) => {
         console.log('[wp-signals] Sending event:', eventName, payload);
         addDebugEntry(eventName, payload);
 
@@ -54,6 +54,12 @@
         data.append('nonce', wpSignalsData.nonce);
         data.append('event_name', eventName);
         data.append('event_meta_details', JSON.stringify(payload));
+        if (options.query) {
+            data.append('query', options.query);
+        }
+        if (options.results) {
+            data.append('results', JSON.stringify(options.results));
+        }
 
         fetch(wpSignalsData.ajaxUrl, {
             method: 'POST',
@@ -90,12 +96,13 @@
             }
             hoverLogged = true;
             console.log('[wp-signals] Hover on result textbox:', item);
-            sendEvent('event_hover', {
-                permalink,
-                postId,
-                label: title,
-                query: queryInput.value.trim(),
-            });
+            sendEvent(
+                'event_hover',
+                {
+                    postId,
+                    label: title,
+                }
+            );
         });
 
         const button = document.createElement('button');
@@ -104,12 +111,13 @@
         button.textContent = 'Record Click';
         button.addEventListener('click', () => {
             console.log('[wp-signals] Record Click button pressed for item:', item);
-            sendEvent('event_click', {
-                permalink,
-                postId,
-                label: title,
-                query: queryInput.value.trim(),
-            });
+            sendEvent(
+                'event_click',
+                {
+                    postId,
+                    label: title,
+                }
+            );
         });
 
         card.append(textarea, button);
@@ -155,6 +163,22 @@
             trimmedItems.forEach((item) => {
                 resultsContainer.appendChild(createResultCard(item));
             });
+
+            const resultIds = trimmedItems
+                .map((item) => item.post_id || item.id)
+                .filter(Boolean);
+
+            sendEvent(
+                'event_search',
+                {
+                    results: trimmedItems,
+                    resultCount: trimmedItems.length,
+                },
+                {
+                    query,
+                    results: resultIds,
+                }
+            );
         } catch (error) {
             console.log('[wp-signals] Fetch error:', error);
             clearResults();

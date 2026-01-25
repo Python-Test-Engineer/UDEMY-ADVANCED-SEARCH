@@ -33,6 +33,8 @@ class WP_Signals_Plugin {
             guid VARCHAR(36) NOT NULL,
             user_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
             event_name VARCHAR(120) NOT NULL,
+            query VARCHAR(255) NULL,
+            results LONGTEXT NULL,
             event_meta_details LONGTEXT NULL,
             created_at DATETIME NOT NULL,
             PRIMARY KEY  (id),
@@ -131,6 +133,8 @@ class WP_Signals_Plugin {
 
         $event_name = '';
         $event_meta_details = '';
+        $query = '';
+        $results = '';
 
         if ( isset( $_POST['event_name'] ) ) {
             $event_name = sanitize_text_field( wp_unslash( $_POST['event_name'] ) );
@@ -138,6 +142,19 @@ class WP_Signals_Plugin {
 
         if ( isset( $_POST['event_meta_details'] ) ) {
             $event_meta_details = wp_unslash( $_POST['event_meta_details'] );
+        }
+
+        if ( isset( $_POST['query'] ) ) {
+            $query = sanitize_text_field( wp_unslash( $_POST['query'] ) );
+        }
+
+        if ( isset( $_POST['results'] ) ) {
+            $raw_results = wp_unslash( $_POST['results'] );
+            if ( is_array( $raw_results ) ) {
+                $results = wp_json_encode( $raw_results );
+            } else {
+                $results = sanitize_text_field( $raw_results );
+            }
         }
 
         if ( empty( $event_name ) ) {
@@ -165,10 +182,12 @@ class WP_Signals_Plugin {
                 'guid'              => wp_generate_uuid4(),
                 'user_id'           => get_current_user_id(),
                 'event_name'        => $event_name,
+                'query'             => $query,
+                'results'           => $results,
                 'event_meta_details'=> $event_meta_details,
                 'created_at'        => current_time( 'mysql' ),
             ),
-            array( '%s', '%s', '%d', '%s', '%s', '%s' )
+            array( '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s' )
         );
 
         if ( false === $inserted ) {
