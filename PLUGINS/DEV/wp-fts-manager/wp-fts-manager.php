@@ -37,7 +37,7 @@ class FTS_Manager {
             'fts-manager',
             array($this, 'render_admin_page'),
             'dashicons-search',
-            39
+            38
         );
     }
     

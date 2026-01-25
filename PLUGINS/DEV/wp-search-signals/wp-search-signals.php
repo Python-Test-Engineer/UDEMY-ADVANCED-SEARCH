@@ -29,6 +29,7 @@ class WP_Signals_Plugin {
 
         $sql = "CREATE TABLE IF NOT EXISTS {$table_name} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            session_id VARCHAR(128) NOT NULL,
             guid VARCHAR(36) NOT NULL,
             user_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
             event_name VARCHAR(120) NOT NULL,
@@ -36,7 +37,8 @@ class WP_Signals_Plugin {
             created_at DATETIME NOT NULL,
             PRIMARY KEY  (id),
             KEY event_name (event_name),
-            KEY user_id (user_id)
+            KEY user_id (user_id),
+            KEY session_id (session_id)
         ) {$charset_collate};";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -51,7 +53,7 @@ class WP_Signals_Plugin {
             'wp-signals',
             array( $this, 'render_admin_page' ),
             'dashicons-rss',
-            38
+            39.5
         );
     }
 
@@ -145,16 +147,28 @@ class WP_Signals_Plugin {
         global $wpdb;
         $table_name = $wpdb->prefix . self::TABLE_SLUG;
 
+        $session_id = '';
+        if ( function_exists( 'wp_get_session_token' ) ) {
+            $session_id = (string) wp_get_session_token();
+        }
+        if ( empty( $session_id ) ) {
+            if ( PHP_SESSION_ACTIVE !== session_status() ) {
+                session_start();
+            }
+            $session_id = (string) session_id();
+        }
+
         $inserted = $wpdb->insert(
             $table_name,
             array(
+                'session_id'        => $session_id,
                 'guid'              => wp_generate_uuid4(),
                 'user_id'           => get_current_user_id(),
                 'event_name'        => $event_name,
                 'event_meta_details'=> $event_meta_details,
                 'created_at'        => current_time( 'mysql' ),
             ),
-            array( '%s', '%d', '%s', '%s', '%s' )
+            array( '%s', '%s', '%d', '%s', '%s', '%s' )
         );
 
         if ( false === $inserted ) {

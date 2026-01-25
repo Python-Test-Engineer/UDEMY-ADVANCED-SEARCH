@@ -83,6 +83,20 @@
         textarea.rows = 6;
         textarea.readOnly = true;
         textarea.value = `${title}\n\n${content || 'No content preview.'}`;
+        let hoverLogged = false;
+        textarea.addEventListener('mouseenter', () => {
+            if (hoverLogged) {
+                return;
+            }
+            hoverLogged = true;
+            console.log('[wp-signals] Hover on result textbox:', item);
+            sendEvent('event_hover', {
+                permalink,
+                postId,
+                label: title,
+                query: queryInput.value.trim(),
+            });
+        });
 
         const button = document.createElement('button');
         button.type = 'button';
