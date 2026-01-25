@@ -134,7 +134,7 @@ class WP_REST_RAG_Endpoints {
 
             <div class="card" style="margin-top: 20px;">
                 <h2>Test Full-Text Search Endpoint</h2>
-                <p>Test the <code><?php echo RAG_SEARCH_ENDPOINT; ?></code> endpoint with query "Collinson" and limit 3.</p>
+                <p>Test the <code><?php echo RAG_SEARCH_ENDPOINT; ?></code> endpoint with query "FOAM" and limit 3.</p>
                 <button type="button" id="test-search-btn" class="button button-primary">Test Full-Text Search</button>
                 <div id="search-results" style="margin-top: 15px; display: none;">
                     <h3>Results:</h3>
@@ -144,7 +144,7 @@ class WP_REST_RAG_Endpoints {
 
             <div class="card" style="margin-top: 20px;">
                 <h2>Test Vector Search Endpoint</h2>
-                <p>Test the <code><?php echo RAG_VECTOR_SEARCH_ENDPOINT; ?></code> endpoint with query "Collinson" and limit 3.</p>
+                <p>Test the <code><?php echo RAG_VECTOR_SEARCH_ENDPOINT; ?></code> endpoint with query "FOAM" and limit 3.</p>
                 <button type="button" id="test-vector-search-btn" class="button button-primary">Test Vector Search</button>
                 <div id="vector-search-results" style="margin-top: 15px; display: none;">
                     <h3>Results:</h3>
@@ -154,7 +154,7 @@ class WP_REST_RAG_Endpoints {
 
             <div class="card" style="margin-top: 20px;">
                 <h2>Test Hybrid Search Endpoint</h2>
-                <p>Test the <code><?php echo RAG_HYBRID_SEARCH_ENDPOINT; ?></code> endpoint with query "Collinson" and limit 3 (gets 3 from each method, combines and deduplicates).</p>
+                <p>Test the <code><?php echo RAG_HYBRID_SEARCH_ENDPOINT; ?></code> endpoint with query "FOAM" and limit 3 (gets 3 from each method, combines and deduplicates).</p>
                 <button type="button" id="test-hybrid-search-btn" class="button button-primary">Test Hybrid Search</button>
                 <div id="hybrid-search-results" style="margin-top: 15px; display: none;">
                     <h3>Results:</h3>
@@ -166,15 +166,15 @@ class WP_REST_RAG_Endpoints {
                 <h2>REST API Endpoints</h2>
                 <h3>Full-Text Search</h3>
                 <p>Search using MySQL full-text index (keyword matching):</p>
-                <code><?php echo esc_url(rest_url(RAG_PLUGIN_NAMESPACE . '/' . RAG_SEARCH_ENDPOINT)); ?>?query=Collinson&limit=3</code>
+                <code><?php echo esc_url(rest_url(RAG_PLUGIN_NAMESPACE . '/' . RAG_SEARCH_ENDPOINT)); ?>?query=FOAM&limit=3</code>
 
                 <h3 style="margin-top: 15px;">Vector Search</h3>
                 <p>Search using semantic similarity (requires embeddings):</p>
-                <code><?php echo esc_url(rest_url(RAG_PLUGIN_NAMESPACE . '/' . RAG_VECTOR_SEARCH_ENDPOINT)); ?>?query=Collinson&limit=3</code>
+                <code><?php echo esc_url(rest_url(RAG_PLUGIN_NAMESPACE . '/' . RAG_VECTOR_SEARCH_ENDPOINT)); ?>?query=FOAM&limit=3</code>
 
                 <h3 style="margin-top: 15px;">Hybrid Search</h3>
                 <p>Combines full-text and vector search results (deduplicated):</p>
-                <code><?php echo esc_url(rest_url(RAG_HYBRID_NAMESPACE . '/' . RAG_HYBRID_SEARCH_ENDPOINT)); ?>?query=Collinson&limit=3</code>
+                <code><?php echo esc_url(rest_url(RAG_HYBRID_NAMESPACE . '/' . RAG_HYBRID_SEARCH_ENDPOINT)); ?>?query=FOAM&limit=3</code>
 
                 <p class="description" style="margin-top: 10px;">
                     <strong>Parameters:</strong> <strong>query</strong> (required), <strong>limit</strong> (optional, default: 3, max: 10 per method)
@@ -642,7 +642,7 @@ class WP_REST_RAG_Endpoints {
             wp_send_json_error('Unauthorized');
         }
 
-        $query = 'Collinson';
+        $query = 'FOAM';
         $limit = 3;
 
         $request = new WP_REST_Request('GET', RAG_PLUGIN_NAMESPACE . '/' . RAG_SEARCH_ENDPOINT);
@@ -666,7 +666,7 @@ class WP_REST_RAG_Endpoints {
             wp_send_json_error('Unauthorized');
         }
 
-        $query = 'Collinson';
+        $query = 'FOAM';
         $limit = 3;
 
         $request = new WP_REST_Request('GET', RAG_PLUGIN_NAMESPACE . '/' . RAG_VECTOR_SEARCH_ENDPOINT);
@@ -690,7 +690,7 @@ class WP_REST_RAG_Endpoints {
             wp_send_json_error('Unauthorized');
         }
 
-        $query = 'Collinson';
+        $query = 'FOAM';
         $limit = 3;
 
         $request = new WP_REST_Request('GET', RAG_HYBRID_NAMESPACE . '/' . RAG_HYBRID_SEARCH_ENDPOINT);
