@@ -84,13 +84,24 @@
         const permalink = item.permalink || item.link || item.url || '#';
         const postId = item.post_id || item.id || '';
 
-        const textarea = document.createElement('textarea');
-        textarea.className = 'wp-signals-textbox';
-        textarea.rows = 6;
-        textarea.readOnly = true;
-        textarea.value = `${title}\n\n${content || 'No content preview.'}`;
+        const body = document.createElement('div');
+        body.className = 'wp-signals-body';
+
+        const titleEl = document.createElement('div');
+        titleEl.className = 'wp-signals-title';
+        titleEl.textContent = title;
+
+        const idEl = document.createElement('div');
+        idEl.className = 'wp-signals-post-id';
+        idEl.textContent = `Post ID: ${postId || 'N/A'}`;
+
+        const contentEl = document.createElement('div');
+        contentEl.className = 'wp-signals-content';
+        contentEl.textContent = content || 'No content preview.';
+
+        body.append(titleEl, idEl, contentEl);
         let hoverLogged = false;
-        textarea.addEventListener('mouseenter', () => {
+        body.addEventListener('mouseenter', () => {
             if (hoverLogged) {
                 return;
             }
@@ -120,7 +131,7 @@
             );
         });
 
-        card.append(textarea, button);
+        card.append(body, button);
         return card;
     };
 

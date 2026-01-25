@@ -72,6 +72,13 @@ class WP_Signals_Plugin {
             true
         );
 
+        wp_enqueue_style(
+            'wp-signals-admin',
+            plugin_dir_url( __FILE__ ) . 'assets/styles.css',
+            array(),
+            '1.0.0'
+        );
+
         wp_localize_script(
             'wp-signals-admin',
             'wpSignalsData',

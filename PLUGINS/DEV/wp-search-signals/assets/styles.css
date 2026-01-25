@@ -1,0 +1,26 @@
+.wp-signals-card {
+    width: 700px;
+    height: auto;
+    font-size: 1.5rem;
+    line-height: 1.5;
+    padding: 10px;
+    border: 1px solid #ccd0d4;
+    border-radius: 5px;
+    background: #fff;
+    margin-bottom: 16px;
+}
+
+.wp-signals-title {
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.wp-signals-post-id {
+    color: #6c7781;
+    margin-bottom: 8px;
+}
+
+.wp-signals-content {
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
