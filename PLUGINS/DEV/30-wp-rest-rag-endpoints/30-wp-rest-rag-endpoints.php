@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: ✅ WP ENDPOINTS
+ * Plugin Name: ✅ 30 WP ENDPOINTS
  * Description: Recreates the REST API endpoints from the Posts RAG Manager plugin in a modular way.
  * Version: 1.0
  * Author: Craig West
@@ -107,12 +107,12 @@ class WP_REST_RAG_Endpoints {
     public function add_admin_menu() {
         add_menu_page(
             'WP REST RAG Endpoints',
-            'REST RAG ENDPOINTS',
+            '30 ENDPOINTS',
             'manage_options',
             'wp-rest-rag-endpoints',
             array($this, 'admin_page'),
             'dashicons-search',
-            3.1
+            4.5
         );
     }
 

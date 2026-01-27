@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: ✅ 100 BM25 SEARCH
+ * Plugin Name: ✅ 02 BM25 SEARCH
  * Plugin URI: https://example.com/bm25-search
  * Description: A WordPress plugin to demonstrate and test BM25 search algorithm
  * Version: 1.0.0
@@ -30,12 +30,12 @@ class BM25_Search_Plugin {
     public function add_admin_menu() {
         add_menu_page(
             'BM25 Search Analyzer',           // Page title
-            '100 BM25 SEARCH',                     // Menu title
+            '02 BM25 SEARCH',                     // Menu title
             'manage_options',                  // Capability
             'bm25-search-analyzer',            // Menu slug
             array($this, 'display_admin_page'), // Callback
             'dashicons-search',                // Icon
-            31                              // Position (level 30)
+            3.2                            // Position
         );
     }
     

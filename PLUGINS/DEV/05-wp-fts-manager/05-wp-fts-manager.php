@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: ✅ 100 FTS MANAGER
+ * Plugin Name: ✅ 05 FTS MANAGER
  * Plugin URI: https://example.com/fts-manager
  * Description: Manage MySQL Full Text Search indexes and test queries with relevance rankings
  * Version: 1.0.1
@@ -32,12 +32,12 @@ class FTS_Manager {
     public function add_admin_menu() {
         add_menu_page(
             __('Full Text Search', 'fts-manager'),
-            '100 FTS MANAGER',
+            '05 FTS MANAGER',
             'manage_options',
             'fts-manager',
             array($this, 'render_admin_page'),
             'dashicons-search',
-            38
+            3.5
         );
     }
     

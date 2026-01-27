@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: ✅ 100 FTS TOOL
+ * Plugin Name: ✅ 04 FTS TOOL
  * Plugin URI: https://example.com/fts-teaching
  * Description: Interactive demonstration of different Full-Text Search methods (TF, IDF, BM25, Natural, Boolean, Expansion) for teaching purposes
  * Version: 1.0.0
@@ -29,12 +29,12 @@ class FTS_Teaching_Plugin {
     public function add_admin_menu() {
         add_menu_page(
             'FTS Teaching Tool',
-            '100 FTS TOOL',
+            '04 FTS TOOL',
             'manage_options',
             'fts-teaching',
             array($this, 'render_admin_page'),
             'dashicons-search',
-            38
+            3.4
         );
     }
     

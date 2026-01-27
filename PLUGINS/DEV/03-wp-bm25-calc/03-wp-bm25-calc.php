@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:✅ 100 BM25 CALC
+ * Plugin Name:✅ 03 BM25 CALC
  * Plugin URI: https://example.com/bm25-calculation
  * Description: Educational demonstration of the BM25 search ranking algorithm with interactive parameter controls
  * Version: 1.0.0
@@ -156,12 +156,12 @@ class BM25_Calculation_Plugin {
     public function add_admin_menu() {
         add_menu_page(
             'BM25 Calculation',           // Page title
-            '100 BM25 CALC',           // Menu title
+            '03 BM25 CALC',           // Menu title
             'manage_options',             // Capability
             'bm25-calculation',           // Menu slug
             [$this, 'render_admin_page'], // Callback
             'dashicons-search',           // Icon
-            37                           // Position
+            3.3                           // Position
         );
     }
     

@@ -37,7 +37,7 @@ class RAG_Search_Assistant {
             'rag-search-assistant',
             array($this, 'render_admin_page'),
             'dashicons-search',
-            3.2
+            4.2
         );
     }
     

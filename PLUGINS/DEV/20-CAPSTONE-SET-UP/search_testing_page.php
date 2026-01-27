@@ -543,7 +543,7 @@ class Posts_RAG_Manager {
             'posts-rag-manager',
             array($this, 'admin_page'),
             'dashicons-admin-tools',
-            3.1
+            4.1
         );
         
         // Add submenu for search testing
