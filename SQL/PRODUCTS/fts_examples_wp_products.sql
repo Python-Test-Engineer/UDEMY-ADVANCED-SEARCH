@@ -25,7 +25,7 @@ ADD FULLTEXT INDEX ft_product_search (product_name, product_short_description, e
 -- Results ranked by relevance automatically
 
 -- Basic natural language search
-SELECT product_name, product_short_description, expanded_description
+SELECT id, product_name, product_short_description,expanded_description,
        MATCH(product_name, product_short_description, expanded_description) 
        AGAINST ('wireless audio') AS relevance_score
 FROM wp_products
@@ -34,7 +34,7 @@ WHERE MATCH(product_name, product_short_description, expanded_description)
 ORDER BY relevance_score DESC;
 
 -- Search for camera products
-SELECT product_name, product_short_description,
+SELECT id, product_name, product_short_description,expanded_description,
        MATCH(product_name, product_short_description, expanded_description) 
        AGAINST ('camera video recording') AS relevance_score
 FROM wp_products
@@ -43,7 +43,7 @@ WHERE MATCH(product_name, product_short_description, expanded_description)
 ORDER BY relevance_score DESC;
 
 -- Search for workspace/office products
-SELECT product_name, product_short_description,
+SELECT id, product_name, product_short_description,expanded_description,
        MATCH(product_name, product_short_description, expanded_description) 
        AGAINST ('desk workspace office') AS relevance_score
 FROM wp_products
@@ -52,7 +52,7 @@ WHERE MATCH(product_name, product_short_description, expanded_description)
 ORDER BY relevance_score DESC;
 
 -- Combine full-text with regular WHERE clause
-SELECT product_name, product_short_description,
+SELECT id, product_name, product_short_description,expanded_description,
        MATCH(product_name, product_short_description, expanded_description) 
        AGAINST ('smart home') AS relevance_score
 FROM wp_products
@@ -125,7 +125,7 @@ WHERE MATCH(product_name, product_short_description, expanded_description)
 
 -- Basic query expansion
 -- Finds "bluetooth" and related terms like "wireless", "connectivity", etc.
-SELECT product_name, product_short_description,
+SELECT id, product_name, product_short_description,expanded_description,
        MATCH(product_name, product_short_description, expanded_description) 
        AGAINST ('bluetooth' WITH QUERY EXPANSION) AS relevance_score
 FROM wp_products
@@ -135,7 +135,7 @@ ORDER BY relevance_score DESC;
 
 -- Search for audio products with expansion
 -- Will find "audio", "sound", "speaker", "music", etc.
-SELECT product_name, product_short_description,
+SELECT id, product_name, product_short_description,expanded_description,
        MATCH(product_name, product_short_description, expanded_description) 
        AGAINST ('audio' WITH QUERY EXPANSION) AS relevance_score
 FROM wp_products
@@ -145,7 +145,7 @@ ORDER BY relevance_score DESC;
 
 -- Search for fitness products with expansion
 -- Will find related terms to "yoga" like "exercise", "fitness", "workout"
-SELECT product_name, product_short_description,
+SELECT id, product_name, product_short_description,expanded_description,
        MATCH(product_name, product_short_description, expanded_description) 
        AGAINST ('yoga' WITH QUERY EXPANSION) AS relevance_score
 FROM wp_products
