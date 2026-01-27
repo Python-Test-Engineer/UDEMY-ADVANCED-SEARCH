@@ -15,11 +15,11 @@ DELETE FROM wp_posts WHERE ID >= 1000 AND ID < 2000;
 -- Create FULLTEXT Indexes
 -- ============================================================================
 -- Combined index for most queries
-CREATE FULLTEXT INDEX idx_posts_fulltext ON wp_posts(post_title, post_content);
+CREATE FULLTEXT INDEX idx_posts_fulltext3 ON wp_posts(post_title, post_content);
 
 -- Separate indexes needed for Example B (weighted title ranking)
-CREATE FULLTEXT INDEX idx_posts_title ON wp_posts(post_title);
-CREATE FULLTEXT INDEX idx_posts_content ON wp_posts(post_content);
+CREATE FULLTEXT INDEX idx_posts_title3 ON wp_posts(post_title);
+CREATE FULLTEXT INDEX idx_posts_content3 ON wp_posts(post_content);
 
 -- ============================================================================
 -- NATURAL LANGUAGE MODE Examples
