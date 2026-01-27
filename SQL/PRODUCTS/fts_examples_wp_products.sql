@@ -13,10 +13,80 @@ ADD FULLTEXT INDEX ft_product_name (product_name);
 ALTER TABLE wp_products 
 ADD FULLTEXT INDEX ft_short_desc (product_short_description);
 
+-- Index on product_short_description only
+ALTER TABLE wp_products 
+ADD FULLTEXT INDEX ft_expanded_description (expanded_description);
 -- Composite index on multiple columns (recommended for comprehensive search)
 ALTER TABLE wp_products 
 ADD FULLTEXT INDEX ft_product_search (product_name, product_short_description, expanded_description);
 
+
+-- Stored procedure to check and create full-text indexes if they don't exist
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS ensure_wp_products_fulltext_indexes$$
+
+CREATE PROCEDURE ensure_wp_products_fulltext_indexes()
+BEGIN
+    -- ft_product_name
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.statistics
+        WHERE table_schema = DATABASE()
+          AND table_name = 'wp_products'
+          AND index_name = 'ft_product_name'
+    ) THEN
+        ALTER TABLE wp_products
+        ADD FULLTEXT INDEX ft_product_name (product_name);
+    END IF;
+
+    -- ft_short_desc
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.statistics
+        WHERE table_schema = DATABASE()
+          AND table_name = 'wp_products'
+          AND index_name = 'ft_short_desc'
+    ) THEN
+        ALTER TABLE wp_products
+        ADD FULLTEXT INDEX ft_short_desc (product_short_description);
+    END IF;
+
+    -- ft_expanded_description
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.statistics
+        WHERE table_schema = DATABASE()
+          AND table_name = 'wp_products'
+          AND index_name = 'ft_expanded_description'
+    ) THEN
+        ALTER TABLE wp_products
+        ADD FULLTEXT INDEX ft_expanded_description (expanded_description);
+    END IF;
+
+    -- ft_product_search (composite)
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.statistics
+        WHERE table_schema = DATABASE()
+          AND table_name = 'wp_products'
+          AND index_name = 'ft_product_search'
+    ) THEN
+        ALTER TABLE wp_products
+        ADD FULLTEXT INDEX ft_product_search (
+            product_name,
+            product_short_description,
+            expanded_description
+        );
+    END IF;
+END$$
+
+DELIMITER ;
+
+CALL ensure_wp_products_fulltext_indexes();
+
+-- Optional: clean up
+DROP PROCEDURE ensure_wp_products_fulltext_indexes;
 
 -- ============================================
 -- 2. NATURAL LANGUAGE MODE QUERIES
@@ -25,7 +95,7 @@ ADD FULLTEXT INDEX ft_product_search (product_name, product_short_description, e
 -- Results ranked by relevance automatically
 
 -- Basic natural language search
-SELECT id, product_name, product_short_description,expanded_description,
+SELECT id, product_name, product_short_description, expanded_description,
        MATCH(product_name, product_short_description, expanded_description) 
        AGAINST ('wireless audio') AS relevance_score
 FROM wp_products
@@ -69,17 +139,18 @@ ORDER BY relevance_score DESC;
 
 -- Search with required terms (+ operator)
 -- Must contain "smart" AND "LED"
-SELECT product_name, product_short_description
+-- LED is in expanded_description for Smart Indoor Garden Kit
+SELECT id, product_name, product_short_description,expanded_description
 FROM wp_products
 WHERE MATCH(product_name, product_short_description, expanded_description) 
       AGAINST ('+smart +LED' IN BOOLEAN MODE);
 
 -- Search with excluded terms (- operator)
--- Contains "speaker" but NOT "bluetooth"
-SELECT product_name, product_short_description
+-- Contains "speaker" and optionally "bluetooth"
+SELECT id, product_name, product_short_description,expanded_description
 FROM wp_products
 WHERE MATCH(product_name, product_short_description, expanded_description) 
-      AGAINST ('+speaker -bluetooth' IN BOOLEAN MODE);
+      AGAINST ('+speaker bluetooth' IN BOOLEAN MODE);
 
 -- Phrase search with quotes
 -- Exact phrase "noise cancelling"
@@ -90,28 +161,28 @@ WHERE MATCH(product_name, product_short_description, expanded_description)
 
 -- Wildcard search (* operator)
 -- Matches "port", "portable", "portability", etc.
-SELECT product_name, product_short_description
+SELECT id, product_name, product_short_description,expanded_description
 FROM wp_products
 WHERE MATCH(product_name, product_short_description, expanded_description) 
       AGAINST ('port*' IN BOOLEAN MODE);
 
 -- Complex boolean query combining operators
 -- Must have "camera" OR "speaker", must have "portable", cannot have "desk"
-SELECT product_name, product_short_description
+SELECT id, product_name, product_short_description,expanded_description
 FROM wp_products
 WHERE MATCH(product_name, product_short_description, expanded_description) 
       AGAINST ('+(camera speaker) +portable -desk' IN BOOLEAN MODE);
 
 -- Optional terms with relevance boosting (> and < operators)
 -- "wireless" is more important, "audio" is less important
-SELECT product_name, product_short_description
+SELECT id, product_name, product_short_description,expanded_description
 FROM wp_products
 WHERE MATCH(product_name, product_short_description, expanded_description) 
       AGAINST ('>wireless <audio' IN BOOLEAN MODE);
 
 -- Search for products with specific features
 -- Must contain "waterproof" or "water-resistant" or "splash-resistant"
-SELECT product_name, product_short_description
+SELECT id, product_name, product_short_description,expanded_description
 FROM wp_products
 WHERE MATCH(product_name, product_short_description, expanded_description) 
       AGAINST ('+water* +(proof resistant)' IN BOOLEAN MODE);
@@ -159,7 +230,7 @@ ORDER BY relevance_score DESC;
 -- ============================================
 
 -- Search with pagination (for WordPress product listings)
-SELECT product_id, product_name, product_short_description,
+SELECT id, product_name, product_short_description,expanded_description,
        MATCH(product_name, product_short_description, expanded_description) 
        AGAINST ('smart home' WITH QUERY EXPANSION) AS relevance_score
 FROM wp_products
@@ -169,7 +240,7 @@ ORDER BY relevance_score DESC
 LIMIT 10 OFFSET 0;
 
 -- Search with minimum relevance threshold
-SELECT product_id, product_name, product_short_description,
+SELECT id, product_name, product_short_description,expanded_description,
        MATCH(product_name, product_short_description, expanded_description) 
        AGAINST ('wireless portable') AS relevance_score
 FROM wp_products
@@ -180,7 +251,7 @@ ORDER BY relevance_score DESC;
 
 -- Combined search: Full-text + category filter (if you add categories)
 -- This example assumes you might join with a categories table
-SELECT p.product_id, p.product_name, p.product_short_description,
+SELECT id, product_name, product_short_description,expanded_description,
        MATCH(p.product_name, p.product_short_description, p.expanded_description) 
        AGAINST ('+audio +wireless' IN BOOLEAN MODE) AS relevance_score
 FROM wp_products p
