@@ -92,7 +92,9 @@ DROP PROCEDURE ensure_wp_products_fulltext_indexes;
 -- 2. NATURAL LANGUAGE MODE QUERIES
 -- ============================================
 -- Default mode - searches for words in natural text
--- Results ranked by relevance automatically
+-- Results ranked by relevance automaticall
+-- !! There must be an index on the  composite searched columns !!
+-- If you MATCH against multiple columns, ensure a FULLTEXT index exists on all those columns, not just individual columns.
 
 -- Basic natural language search
 SELECT id, product_name, product_short_description, expanded_description,
