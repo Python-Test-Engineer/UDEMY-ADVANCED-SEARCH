@@ -25,7 +25,7 @@ ADD FULLTEXT INDEX ft_product_search (product_name, product_short_description, e
 -- Results ranked by relevance automatically
 
 -- Basic natural language search
-SELECT product_name, product_short_description,
+SELECT product_name, product_short_description, expanded_description
        MATCH(product_name, product_short_description, expanded_description) 
        AGAINST ('wireless audio') AS relevance_score
 FROM wp_products
