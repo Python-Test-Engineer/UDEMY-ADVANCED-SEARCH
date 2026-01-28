@@ -773,8 +773,10 @@ class Posts_RAG_Manager {
                         action: 'generate_embeddings'
                     },
                     success: function(response) {
+                        console.log('✅ Embeddings response:', response);
                         if (response.success) {
                             showMessage(response.data, 'success');
+                            setTimeout(function() { refreshStats(); }, 500);
                         } else {
                             showMessage(response.data, 'error');
                         }
