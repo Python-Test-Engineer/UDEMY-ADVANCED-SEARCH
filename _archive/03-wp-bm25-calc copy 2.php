@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:✅ 03 BM25 CALC
+ * Plugin Name:✅ 03 BM25 CALC - Enhanced Index Manager
  * Description: BM25 algorithm with comprehensive FTS index management for all field combinations
  * Version: 1.1.0
  * License: GPL v2 or later
@@ -206,18 +206,6 @@ class BM25_Calculation_Plugin {
         }
         
         $existing_indexes = $this->get_existing_indexes($table_name);
-        
-        // Load products from database
-        $products = $wpdb->get_results(
-            "SELECT id, product_name, product_short_description, expanded_description
-             FROM {$table_name}
-             WHERE product_name IS NOT NULL AND product_name != ''
-             LIMIT 100",
-            ARRAY_A
-        );
-        $product_names = array_map(function($p) { return $p['product_name']; }, $products);
-        $documents_text = implode("\n", $product_names);
-        
         ?>
         <div class="wrap">
             <h1>🔍 BM25 Search Ranking Calculator</h1>
@@ -323,7 +311,7 @@ class BM25_Calculation_Plugin {
                     <h2>Search Configuration</h2>
                     <div class="fg">
                         <label for="bm25-query">Query:</label>
-                        <input type="text" id="bm25-query" class="widefat" value="smart led">
+                        <input type="text" id="bm25-query" class="widefat" value="search engine">
                     </div>
                     <div class="fg">
                         <label for="bm25-limit">Limit:</label>
@@ -331,19 +319,20 @@ class BM25_Calculation_Plugin {
                     </div>
                     <h3>Parameters</h3>
                     <div class="fg">
-                        <label for="bm25-k1">k1 (Term Frequency Saturation): <span class="pv" id="k1-value">1.5</span></label>
+                        <label for="bm25-k1">k1: <span class="pv">1.5</span></label>
                         <input type="range" id="bm25-k1" min="0" max="3" step="0.1" value="1.5" class="widefat">
-                        <p class="description">Typical range: 1.2-2.0</p>
                     </div>
                     <div class="fg">
-                        <label for="bm25-b">b (Document Length Normalization): <span class="pv" id="b-value">0.75</span></label>
+                        <label for="bm25-b">b: <span class="pv">0.75</span></label>
                         <input type="range" id="bm25-b" min="0" max="1" step="0.05" value="0.75" class="widefat">
-                        <p class="description">Typical range: 0.5-0.8</p>
                     </div>
                     <div class="fg">
                         <label for="bm25-documents">Documents (one per line):</label>
-                        <textarea id="bm25-documents" rows="8" class="widefat"><?php echo esc_textarea($documents_text); ?></textarea>
-                        <p class="description">Product names from wp_products table (max 100)</p>
+                        <textarea id="bm25-documents" rows="8" class="widefat">The quick brown fox jumps
+Search engines rank pages
+Machine learning improves search
+Natural language processing
+Information retrieval systems</textarea>
                     </div>
                     <button id="bm25-calculate" class="button button-primary button-large">Calculate</button>
                 </div>
@@ -366,7 +355,7 @@ class BM25_Calculation_Plugin {
         .ref-box{background:#fffbcc;border:1px solid #e6db55;padding:15px;margin:15px 0}
         .no-idx{font-style:italic;color:#666}
         .btn-del{color:#d63638}
-        .bm25-grid{display:grid;grid-template-columns:1fr 2fr;gap:20px;margin-top:20px}
+        .bm25-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
         .bm25-box{background:#fff;padding:20px;border:1px solid #ccd0d4}
         .fg{margin-bottom:20px}.fg label{display:block;font-weight:600;margin-bottom:5px}
         .pv{color:#2271b1;font-weight:bold}
@@ -374,10 +363,6 @@ class BM25_Calculation_Plugin {
         .result-item.rank-1{border-left-color:#d4af37;background:#fffdf0}
         .result-header{display:flex;justify-content:space-between;margin-bottom:10px}
         .result-rank{font-size:24px;font-weight:bold}.result-score{font-size:18px;font-weight:bold;color:#2271b1}
-        .result-meta{margin-top:8px}
-        .result-meta p{margin:4px 0}
-        .result-meta .label{font-weight:600;color:#1d2327}
-        .result-meta .value{color:#3c434a}
         .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px}
         .stat-item{padding:10px;background:#f0f0f1;border-radius:4px}
         .stat-label{font-size:12px;color:#646970}.stat-value{font-size:24px;font-weight:bold;color:#2271b1}
@@ -387,18 +372,10 @@ class BM25_Calculation_Plugin {
         
         <script>
         jQuery(document).ready(function($){
-            // Update slider value displays
-            $('#bm25-k1').on('input',function(){$('#k1-value').text($(this).val())});
-            $('#bm25-b').on('input',function(){$('#b-value').text($(this).val())});
-            
-            const productData = <?php echo wp_json_encode($products); ?>;
-
+            $('#bm25-k1, #bm25-b').on('input',function(){$(this).next('.pv').text($(this).val())});
             $('#bm25-calculate').on('click',function(){
                 const query=$('#bm25-query').val(),k1=$('#bm25-k1').val(),b=$('#bm25-b').val(),
-                limit=parseInt($('#bm25-limit').val());
-                const documents = productData.length
-                    ? productData.map(p => [p.product_name, p.product_short_description, p.expanded_description].filter(Boolean).join(' '))
-                    : $('#bm25-documents').val().split('\n').filter(d=>d.trim());
+                limit=parseInt($('#bm25-limit').val()),documents=$('#bm25-documents').val().split('\n').filter(d=>d.trim());
                 if(!query.trim()||!documents.length){alert('Enter query and documents');return}
                 $('#bm25-results').html('<p>Calculating...</p>');
                 $.ajax({url:bm25Ajax.ajax_url,type:'POST',data:{action:'bm25_calculate',nonce:bm25Ajax.nonce,query,k1,b,limit,documents},
@@ -414,19 +391,9 @@ class BM25_Calculation_Plugin {
                 let rh='';
                 data.results.forEach((r,i)=>{
                     const rank=i+1,medal=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':`#${rank}`;
-                    const product = productData.length ? productData[r.index - 1] : null;
                     rh+=`<div class="result-item rank-${rank}"><div class="result-header">
                         <span class="result-rank">${medal}</span><span class="result-score">Score: ${r.score.toFixed(4)}</span>
-                    </div>
-                    ${product ? `
-                        <div class="result-meta">
-                            <p><span class="label">ID:</span> <span class="value">${product.id ?? '-'}</span></p>
-                            <p><span class="label">Product Name:</span> <span class="value">${product.product_name ?? '-'}</span></p>
-                            <p><span class="label">Short Description:</span> <span class="value">${product.product_short_description ?? '-'}</span></p>
-                            <p><span class="label">Expanded Description:</span> <span class="value">${product.expanded_description ?? '-'}</span></p>
-                        </div>
-                    ` : `<div>${r.document}</div>`}
-                    </div>`;
+                    </div><div>${r.document}</div></div>`;
                 });
                 $('#bm25-results').html(rh);
                 let dh='';

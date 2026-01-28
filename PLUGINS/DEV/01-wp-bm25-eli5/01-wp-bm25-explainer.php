@@ -32,8 +32,8 @@ function bm25_explainer_page() {
     ?>
     <div class="wrap">
         <h1>🎯 Understanding BM25 and Ranking Algorithms</h1>
-        <p style="font-size: 16px; max-width: 800px;">
-            Ever wonder how search engines decide which results to show you first? Let's explore BM25, 
+        <p style="font-size: 1.5rem;">
+            Ever wonder how search engines decide which results to show you first?<br> Let's explore BM25, 
             one of the most important ranking algorithms used by search engines like Elasticsearch and many others!
         </p>
 
@@ -57,8 +57,8 @@ function bm25_explainer_page() {
                     <table class="widefat">
                         <thead>
                             <tr>
-                                <th>Document</th>
-                                <th>Why It Ranks High/Low</th>
+                                <th style="background:#ffffff">Document</th>
+                                <th style="background:#ffffff">Why It Ranks High/Low</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -92,9 +92,9 @@ function bm25_explainer_page() {
                     <table class="widefat">
                         <thead>
                             <tr>
-                                <th>Document</th>
-                                <th>Times "pizza" appears</th>
-                                <th>Rank</th>
+                                <th style="background:#ffffff">>Document</th>
+                                <th style="background:#ffffff">>Times "pizza" appears</th>
+                                <th style="background:#ffffff">>Rank</th>
                             </tr>
                         </thead>
                         <tbody>
