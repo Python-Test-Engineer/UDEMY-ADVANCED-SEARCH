@@ -352,25 +352,6 @@ class Posts_RAG_Manager {
     /**
      * Perform full-text search
      */
-    private function fulltext_search($query, $limit = 3) {
-        global $wpdb;
-        
-        $query = $wpdb->esc_like($query);
-        
-        $sql = $wpdb->prepare(
-            "SELECT post_id, post_title, post_content, categories, tags, 
-                    MATCH(post_title, post_content) AGAINST(%s IN NATURAL LANGUAGE MODE) as relevance_score
-             FROM {$this->table_name}
-             WHERE MATCH(post_title, post_content) AGAINST(%s IN NATURAL LANGUAGE MODE)
-             ORDER BY relevance_score DESC
-             LIMIT %d",
-            $query,
-            $query,
-            $limit
-        );
-        
-        return $wpdb->get_results($sql);
-    }
     
     /**
      * Add admin menu
@@ -1030,6 +1011,7 @@ class Posts_RAG_Manager {
             'errors' => $errors
         );
     }
+  
     
     /**
      * Call OpenAI API to get embedding for text
@@ -1075,15 +1057,477 @@ class Posts_RAG_Manager {
     /**
      * Search testing page (placeholder - copy from original)
      */
+    /**
+     * Search Testing Page
+     */
     public function search_testing_page() {
-        echo '<div class="wrap"><h1>Search Testing</h1><p>Copy search testing functionality from original file.</p></div>';
+        if (!current_user_can('manage_options')) {
+            wp_die('Unauthorized access');
+        }
+        
+        $site_url = get_site_url();
+        $fts_endpoint = rest_url('posts-rag/v1/search');
+        $vector_endpoint = rest_url('posts-rag/v1/vector-search');
+        ?>
+        <div class="wrap">
+            <h1>Search Testing</h1>
+            
+            <div id="search-message" style="display:none; margin: 15px 0;" class="notice">
+                <p></p>
+            </div>
+            
+            <!-- Full-Text Search Testing -->
+            <div class="card" style="margin-top: 20px;">
+                <h2>Full-Text Search (FTS) Testing</h2>
+                <p>Test the MySQL full-text search functionality. Requires a full-text index to be created.</p>
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">
+                            <label for="fts-query">Search Query</label>
+                        </th>
+                        <td>
+                            <input type="text" id="fts-query" class="regular-text" placeholder="Enter search term..." value="foam">
+                            <p class="description">Enter keywords to search for (e.g., "foam", "materials")</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">
+                            <label for="fts-limit">Result Limit</label>
+                        </th>
+                        <td>
+                            <input type="number" id="fts-limit" value="3" min="1" max="20" style="width: 80px;">
+                            <p class="description">Number of results to return (1-20)</p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <p class="submit">
+                    <button type="button" id="test-fts-btn" class="button button-primary">Test Full-Text Search</button>
+                </p>
+                
+                <div id="fts-results" style="margin-top: 20px; display: none;">
+                    <h3>Results:</h3>
+                    <div id="fts-results-content" style="background: #f5f5f5; padding: 15px; border-radius: 4px; max-height: 500px; overflow-y: auto;">
+                        <pre id="fts-json" style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <strong>API Endpoint:</strong><br>
+                    <code><?php echo esc_url($fts_endpoint); ?>?query=foam&limit=3</code>
+                </div>
+            </div>
+            
+            <!-- Vector Search Testing -->
+            <div class="card" style="margin-top: 20px;">
+                <h2>Vector Search Testing</h2>
+                <p>Test the semantic similarity search using OpenAI embeddings. Requires embeddings to be generated.</p>
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">
+                            <label for="vector-query">Search Query</label>
+                        </th>
+                        <td>
+                            <input type="text" id="vector-query" class="regular-text" placeholder="Enter search phrase..." value="sustainable materials">
+                            <p class="description">Enter a phrase or question for semantic search</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">
+                            <label for="vector-limit">Result Limit</label>
+                        </th>
+                        <td>
+                            <input type="number" id="vector-limit" value="3" min="1" max="20" style="width: 80px;">
+                            <p class="description">Number of results to return (1-20)</p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <p class="submit">
+                    <button type="button" id="test-vector-btn" class="button button-primary">Test Vector Search</button>
+                </p>
+                
+                <div id="vector-results" style="margin-top: 20px; display: none;">
+                    <h3>Results:</h3>
+                    <div id="vector-results-content" style="background: #f5f5f5; padding: 15px; border-radius: 4px; max-height: 500px; overflow-y: auto;">
+                        <pre id="vector-json" style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <strong>API Endpoint:</strong><br>
+                    <code><?php echo esc_url($vector_endpoint); ?>?query=sustainable+materials&limit=3</code>
+                </div>
+            </div>
+            
+            <!-- Comparison Testing -->
+            <div class="card" style="margin-top: 20px;">
+                <h2>Compare Both Methods</h2>
+                <p>Run the same query through both FTS and Vector search to compare results.</p>
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">
+                            <label for="compare-query">Search Query</label>
+                        </th>
+                        <td>
+                            <input type="text" id="compare-query" class="regular-text" placeholder="Enter search term..." value="foam">
+                        </td>
+                    </tr>
+                </table>
+                
+                <p class="submit">
+                    <button type="button" id="compare-btn" class="button button-primary">Compare Both Methods</button>
+                </p>
+                
+                <div id="compare-results" style="margin-top: 20px; display: none;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <h3>Full-Text Search Results</h3>
+                            <div style="background: #f5f5f5; padding: 15px; border-radius: 4px; max-height: 400px; overflow-y: auto;">
+                                <pre id="compare-fts-json" style="white-space: pre-wrap; word-wrap: break-word; font-size: 12px;"></pre>
+                            </div>
+                        </div>
+                        <div>
+                            <h3>Vector Search Results</h3>
+                            <div style="background: #f5f5f5; padding: 15px; border-radius: 4px; max-height: 400px; overflow-y: auto;">
+                                <pre id="compare-vector-json" style="white-space: pre-wrap; word-wrap: break-word; font-size: 12px;"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <style>
+        .card {
+            background: #fff;
+            border: 1px solid #ccd0d4;
+            padding: 20px;
+            box-shadow: 0 1px 1px rgba(0,0,0,.04);
+        }
+        .card h2 {
+            margin-top: 0;
+        }
+        </style>
+        
+        <script>
+        jQuery(document).ready(function($) {
+            
+            function showMessage(message, type) {
+                var $msg = $('#search-message');
+                $msg.removeClass('notice-success notice-error notice-info notice-warning')
+                    .addClass('notice-' + type)
+                    .find('p').text(message);
+                $msg.show();
+                
+                setTimeout(function() {
+                    $msg.fadeOut();
+                }, 5000);
+            }
+            
+            // Test Full-Text Search
+            $('#test-fts-btn').on('click', function() {
+                var $btn = $(this);
+                var query = $('#fts-query').val();
+                var limit = $('#fts-limit').val();
+                
+                if (!query) {
+                    showMessage('Please enter a search query', 'error');
+                    return;
+                }
+                
+                $btn.prop('disabled', true).text('Searching...');
+                $('#fts-results').hide();
+                
+                var url = '<?php echo esc_url($fts_endpoint); ?>?query=' + encodeURIComponent(query) + '&limit=' + limit;
+                
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    success: function(response) {
+                        console.log('FTS Response:', response);
+                        $('#fts-json').text(JSON.stringify(response, null, 2));
+                        $('#fts-results').show();
+                        
+                        if (response.success && response.count > 0) {
+                            showMessage('Found ' + response.count + ' results', 'success');
+                        } else if (response.success) {
+                            showMessage('No results found', 'info');
+                        } else {
+                            showMessage('Search completed with no matches', 'warning');
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('FTS Error:', xhr);
+                        var error = xhr.responseJSON || {message: 'Unknown error'};
+                        $('#fts-json').text(JSON.stringify(error, null, 2));
+                        $('#fts-results').show();
+                        showMessage('Error: ' + (error.message || xhr.statusText), 'error');
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false).text('Test Full-Text Search');
+                    }
+                });
+            });
+            
+            // Test Vector Search
+            $('#test-vector-btn').on('click', function() {
+                var $btn = $(this);
+                var query = $('#vector-query').val();
+                var limit = $('#vector-limit').val();
+                
+                if (!query) {
+                    showMessage('Please enter a search query', 'error');
+                    return;
+                }
+                
+                $btn.prop('disabled', true).text('Searching...');
+                $('#vector-results').hide();
+                
+                var url = '<?php echo esc_url($vector_endpoint); ?>?query=' + encodeURIComponent(query) + '&limit=' + limit;
+                
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    success: function(response) {
+                        console.log('Vector Response:', response);
+                        $('#vector-json').text(JSON.stringify(response, null, 2));
+                        $('#vector-results').show();
+                        
+                        if (response.success && response.count > 0) {
+                            showMessage('Found ' + response.count + ' results', 'success');
+                        } else if (response.success) {
+                            showMessage('No results found', 'info');
+                        } else {
+                            showMessage('Search completed with no matches', 'warning');
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('Vector Error:', xhr);
+                        var error = xhr.responseJSON || {message: 'Unknown error'};
+                        $('#vector-json').text(JSON.stringify(error, null, 2));
+                        $('#vector-results').show();
+                        showMessage('Error: ' + (error.message || xhr.statusText), 'error');
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false).text('Test Vector Search');
+                    }
+                });
+            });
+            
+            // Compare Both Methods
+            $('#compare-btn').on('click', function() {
+                var $btn = $(this);
+                var query = $('#compare-query').val();
+                
+                if (!query) {
+                    showMessage('Please enter a search query', 'error');
+                    return;
+                }
+                
+                $btn.prop('disabled', true).text('Comparing...');
+                $('#compare-results').hide();
+                
+                var ftsUrl = '<?php echo esc_url($fts_endpoint); ?>?query=' + encodeURIComponent(query) + '&limit=3';
+                var vectorUrl = '<?php echo esc_url($vector_endpoint); ?>?query=' + encodeURIComponent(query) + '&limit=3';
+                
+                $.when(
+                    $.ajax({url: ftsUrl, type: 'GET'}),
+                    $.ajax({url: vectorUrl, type: 'GET'})
+                ).done(function(ftsResult, vectorResult) {
+                    console.log('FTS:', ftsResult[0]);
+                    console.log('Vector:', vectorResult[0]);
+                    
+                    $('#compare-fts-json').text(JSON.stringify(ftsResult[0], null, 2));
+                    $('#compare-vector-json').text(JSON.stringify(vectorResult[0], null, 2));
+                    $('#compare-results').show();
+                    
+                    showMessage('Comparison complete!', 'success');
+                }).fail(function(xhr) {
+                    showMessage('Error during comparison', 'error');
+                    console.error('Comparison error:', xhr);
+                }).always(function() {
+                    $btn.prop('disabled', false).text('Compare Both Methods');
+                });
+            });
+        });
+        </script>
+        <?php
     }
     
     /**
      * REST API endpoint: Vector search (placeholder - copy from original)
      */
+    
+    /**
+     * REST API endpoint: Vector search
+     */
     public function rest_vector_search($request) {
-        return new WP_Error('not_implemented', 'Copy vector search implementation from original file', array('status' => 501));
+        $query = $request->get_param('query');
+        $limit = $request->get_param('limit');
+        
+        if (empty($query)) {
+            return new WP_Error('invalid_query', 'Query parameter is required', array('status' => 400));
+        }
+        
+        // Limit between 1 and 20
+        $limit = max(1, min(20, $limit));
+        
+        // Perform vector search
+        $result = $this->vector_search($query, $limit);
+        
+        if (!$result['success']) {
+            return new WP_Error('search_failed', $result['message'], array('status' => 500));
+        }
+        
+        return array(
+            'success' => true,
+            'query' => $query,
+            'method' => 'vector_search',
+            'results' => $result['results'],
+            'count' => count($result['results'])
+        );
+    }
+    
+    /**
+     * Calculate cosine similarity between two vectors
+     */
+    private function cosine_similarity($vec1, $vec2) {
+        if (count($vec1) !== count($vec2)) {
+            return 0;
+        }
+        
+        $dot_product = 0;
+        $magnitude1 = 0;
+        $magnitude2 = 0;
+        
+        for ($i = 0; $i < count($vec1); $i++) {
+            $dot_product += $vec1[$i] * $vec2[$i];
+            $magnitude1 += $vec1[$i] * $vec1[$i];
+            $magnitude2 += $vec2[$i] * $vec2[$i];
+        }
+        
+        $magnitude1 = sqrt($magnitude1);
+        $magnitude2 = sqrt($magnitude2);
+        
+        if ($magnitude1 == 0 || $magnitude2 == 0) {
+            return 0;
+        }
+        
+        return $dot_product / ($magnitude1 * $magnitude2);
+    }
+    
+    /**
+     * Perform vector search using cosine similarity
+     */
+    private function vector_search($query, $limit = 3) {
+        global $wpdb;
+        
+        $api_key = get_option($this->option_name);
+        
+        if (empty($api_key)) {
+            return array(
+                'success' => false,
+                'message' => 'OpenAI API key is not configured.'
+            );
+        }
+        
+        // Generate embedding for the query
+        $query_embedding = $this->get_openai_embedding($query, $api_key);
+        
+        if ($query_embedding === false) {
+            return array(
+                'success' => false,
+                'message' => 'Failed to generate embedding for query.'
+            );
+        }
+        
+        // Get all posts with embeddings
+        $posts = $wpdb->get_results(
+            "SELECT id, post_id, post_title, post_content, categories, tags, embedding 
+            FROM {$this->table_name} 
+            WHERE embedding IS NOT NULL AND embedding != ''"
+        );
+        
+        if (empty($posts)) {
+            return array(
+                'success' => false,
+                'message' => 'No posts with embeddings found. Please generate embeddings first.'
+            );
+        }
+        
+        // Calculate cosine similarity for each post
+        $similarities = array();
+        
+        foreach ($posts as $post) {
+            $post_embedding = json_decode($post->embedding, true);
+            
+            if (is_array($post_embedding)) {
+                $similarity = $this->cosine_similarity($query_embedding, $post_embedding);
+                
+                $similarities[] = array(
+                    'post_id' => intval($post->post_id),
+                    'post_title' => $post->post_title,
+                    'similarity_score' => $similarity,
+                    'categories' => $post->categories,
+                    'tags' => $post->tags,
+                    'excerpt' => wp_trim_words($post->post_content, 30)
+                );
+            }
+        }
+        
+        // Sort by similarity score (highest first)
+        usort($similarities, function($a, $b) {
+            return $b['similarity_score'] <=> $a['similarity_score'];
+        });
+        
+        // Return top N results
+        $top_results = array_slice($similarities, 0, $limit);
+        
+        return array(
+            'success' => true,
+            'results' => $top_results
+        );
+    }
+    
+    /**
+     * Perform full-text search on the RAG table
+     */
+    private function fulltext_search($query, $limit = 3) {
+        global $wpdb;
+        
+        // Get index info to determine which fields are indexed
+        $index_info = $this->get_fulltext_index_info();
+        
+        if (!$index_info) {
+            return array();
+        }
+        
+        $indexed_fields = implode(', ', $index_info['columns']);
+        
+        $sql = $wpdb->prepare(
+            "SELECT 
+                post_id,
+                post_title,
+                post_content,
+                categories,
+                tags,
+                MATCH({$indexed_fields}) 
+                AGAINST (%s IN NATURAL LANGUAGE MODE) as relevance_score
+            FROM {$this->table_name}
+            WHERE MATCH({$indexed_fields}) 
+                AGAINST (%s IN NATURAL LANGUAGE MODE)
+            ORDER BY relevance_score DESC
+            LIMIT %d",
+            $query,
+            $query,
+            $limit
+        );
+        
+        return $wpdb->get_results($sql);
     }
     
     /**
