@@ -474,7 +474,12 @@ class Posts_RAG_Manager {
                     <button type="button" id="save-api-key-btn" class="button button-primary">Save API Key</button>
                 </p>
             </div>
-            
+             <div class="card" style="margin-top: 20px;">
+                <h2>Table Statistics</h2>
+                <div id="stats-container">
+                    <?php $this->display_stats(); ?>
+                </div>
+            </div>
             <div class="card" style="margin-top: 20px;">
                 <h2>Sync Posts to RAG Table</h2>
                 <p>Click the button below to sync all published posts to the RAG table.</p>
@@ -546,12 +551,7 @@ class Posts_RAG_Manager {
                 </p>
             </div>
             
-            <div class="card" style="margin-top: 20px;">
-                <h2>Table Statistics</h2>
-                <div id="stats-container">
-                    <?php $this->display_stats(); ?>
-                </div>
-            </div>
+           
         </div>
         
         <script>
