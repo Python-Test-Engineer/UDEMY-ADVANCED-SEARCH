@@ -815,15 +815,23 @@ class Posts_RAG_Manager {
     /**
      * Display table statistics
      */
+    /**
+     * Display table statistics
+     */
     private function display_stats() {
         global $wpdb;
         
         $total_rows = $wpdb->get_var("SELECT COUNT(*) FROM {$this->table_name}");
-        $embedded_rows = $wpdb->get_var("SELECT COUNT(*) FROM {$this->table_name} WHERE last_embedded IS NOT NULL");
+        
+        // Count posts with valid embeddings (not NULL and not empty)
+        $embedded_rows = $wpdb->get_var("SELECT COUNT(*) FROM {$this->table_name} WHERE last_embedded IS NOT NULL AND embedding IS NOT NULL AND embedding != ''");
+        
         $index_info = $this->get_fulltext_index_info();
         
-        echo '<p><strong>Total Posts in RAG Table:</strong> ' . $total_rows . '</p>';
-        echo '<p><strong>Posts with Embeddings:</strong> ' . $embedded_rows . '</p>';
+        error_log("📊 Stats - Total: {$total_rows}, Embedded: {$embedded_rows}");
+        
+        echo '<p><strong>Total Posts in RAG Table:</strong> ' . intval($total_rows) . '</p>';
+        echo '<p><strong>Posts with Embeddings:</strong> ' . intval($embedded_rows) . '</p>';
         echo '<p><strong>Full-Text Index:</strong> ' . ($index_info ? '✅ Active (' . $index_info['name'] . ')' : '❌ Not Created') . '</p>';
     }
     
@@ -924,7 +932,6 @@ class Posts_RAG_Manager {
         
         return $synced_count;
     }
-    
     /**
      * Generate embeddings for posts using OpenAI API
      */
@@ -941,9 +948,22 @@ class Posts_RAG_Manager {
         }
 
         // Get posts without embeddings
-        $posts = $wpdb->get_results(
-            "SELECT id, post_id, post_title, post_content FROM {$this->table_name} WHERE last_embedded IS NULL"
-        );
+
+        // Debug: Show what we're looking for
+        $null_last_embedded = $wpdb->get_var("SELECT COUNT(*) FROM {$this->table_name} WHERE last_embedded IS NULL");
+        $null_embedding = $wpdb->get_var("SELECT COUNT(*) FROM {$this->table_name} WHERE embedding IS NULL");
+        $empty_embedding = $wpdb->get_var("SELECT COUNT(*) FROM {$this->table_name} WHERE embedding = ''");
+        
+        error_log("🔍 Debug counts:");
+        error_log("   - last_embedded IS NULL: {$null_last_embedded}");
+        error_log("   - embedding IS NULL: {$null_embedding}");
+        error_log("   - embedding = '': {$empty_embedding}");
+        $query = "SELECT id, post_id, post_title, post_content FROM {$this->table_name} WHERE last_embedded IS NULL OR embedding IS NULL OR embedding = ''";
+        error_log("🔍 Embeddings query: " . $query);
+        
+        $posts = $wpdb->get_results($query);
+        
+        error_log("📊 Found " . count($posts) . " posts without embeddings");
 
         if (empty($posts)) {
             return array(
@@ -957,6 +977,8 @@ class Posts_RAG_Manager {
         $errors = array();
 
         foreach ($posts as $post) {
+            error_log("🔄 Processing post ID: {$post->post_id}");
+            
             // Create embedding text from title + content (truncated for API limits)
             $embedding_text = $post->post_title . "\n\n" . wp_trim_words($post->post_content, 500);
 
@@ -979,13 +1001,16 @@ class Posts_RAG_Manager {
 
                 if ($updated !== false) {
                     $success_count++;
+                    error_log("✅ Embedded post ID: {$post->post_id}");
                 } else {
                     $error_count++;
                     $errors[] = "Failed to update database for post ID {$post->post_id}";
+                    error_log("❌ Failed to update DB for post ID: {$post->post_id} - " . $wpdb->last_error);
                 }
             } else {
                 $error_count++;
                 $errors[] = "Failed to generate embedding for post ID {$post->post_id}";
+                error_log("❌ Failed to generate embedding for post ID: {$post->post_id}");
             }
 
             // Small delay to avoid rate limiting
@@ -996,6 +1021,8 @@ class Posts_RAG_Manager {
         if ($error_count > 0) {
             $message .= " {$error_count} errors occurred.";
         }
+        
+        error_log("✅ Embedding complete: {$message}");
 
         return array(
             'success' => $success_count > 0,
