@@ -53,7 +53,7 @@ class FTS_Manager {
                     
                     <div class="fts-current-indexes">
                         <h3><?php echo esc_html__('Current Indexes', 'fts-manager'); ?></h3>
-                        <button class="button" id="refresh-indexes"><?php echo esc_html__('Refresh index list', 'fts-manager'); ?></button>
+                        <button class="button" id="refresh-indexes"><?php echo esc_html__('Refresh', 'fts-manager'); ?></button>
                         <div id="indexes-list"></div>
                     </div>
                     
@@ -62,15 +62,19 @@ class FTS_Manager {
                         <form id="create-index-form">
                             <table class="form-table">
                                 <tr>
-                                    <td colspan="2">
-                                        <label for="index-name"><?php echo esc_html__('Index Name', 'fts-manager'); ?></label><br>
-                                        <input type="text" id="index-name" name="index_name" size="45" placeholder="ft_product_search" required>
+                                    <th scope="row">
+                                        <label for="index-name"><?php echo esc_html__('Index Name', 'fts-manager'); ?></label>
+                                    </th>
+                                    <td>
+                                        <input type="text" id="index-name" name="index_name" class="regular-text" placeholder="ft_product_search" required>
                                         <p class="description"><?php echo esc_html__('Enter a unique name for the index (e.g., ft_product_name)', 'fts-manager'); ?></p>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td colspan="2">
-                                        <label><?php echo esc_html__('Columns', 'fts-manager'); ?></label><br>
+                                    <th scope="row">
+                                        <label><?php echo esc_html__('Columns', 'fts-manager'); ?></label>
+                                    </th>
+                                    <td>
                                         <label><input type="checkbox" name="columns[]" value="product_name"> product_name</label><br>
                                         <label><input type="checkbox" name="columns[]" value="product_short_description"> product_short_description</label><br>
                                         <label><input type="checkbox" name="columns[]" value="expanded_description"> expanded_description</label>
@@ -156,7 +160,7 @@ port*
             }
             .fts-container {
                 display: grid;
-                grid-template-columns: 420px 1fr;
+                grid-template-columns: 1fr 1fr;
                 gap: 20px;
                 margin-top: 20px;
             }
@@ -489,7 +493,7 @@ port*
                 }
                 
                 html += '<table class="results-table">';
-                html += '<thead><tr><th>Rank</th><th>Product Name</th><th>Short Description</th><th>Expanded Description</th><th>Relevance</th></tr></thead>';
+                html += '<thead><tr><th>Rank</th><th>Product Name</th><th>Short Description</th><th>Relevance</th></tr></thead>';
                 html += '<tbody>';
                 
                 const maxScore = parseFloat(data.max_score) || 1;
@@ -502,7 +506,6 @@ port*
                     html += '<td>' + (index + 1) + '</td>';
                     html += '<td><strong>' + result.product_name + '</strong></td>';
                     html += '<td>' + result.product_short_description + '</td>';
-                    html += '<td>' + (result.expanded_description || '') + '</td>';
                     html += '<td>';
                     html += '<span class="relevance-score">' + score.toFixed(4) + '</span>';
                     html += '<div class="relevance-bar"><div class="relevance-bar-fill" style="width: ' + percentage + '%"></div></div>';
@@ -687,7 +690,7 @@ port*
         }
         
         $sql = $wpdb->prepare(
-            "SELECT product_name, product_short_description, expanded_description,
+            "SELECT product_name, product_short_description, 
                     MATCH({$columns_str}) {$against_clause} AS relevance_score
              FROM {$this->table_name}
              WHERE MATCH({$columns_str}) {$against_clause}

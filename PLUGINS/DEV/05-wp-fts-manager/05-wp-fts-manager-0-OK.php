@@ -6,7 +6,7 @@
  * Version: 1.0.1
  * Author: Your Name
  * License: GPL v2 or later
- * Text Domain: fts-manager
+ * Text Domain: fts-manager 
  */
 
 // Prevent direct access
@@ -53,7 +53,7 @@ class FTS_Manager {
                     
                     <div class="fts-current-indexes">
                         <h3><?php echo esc_html__('Current Indexes', 'fts-manager'); ?></h3>
-                        <button class="button" id="refresh-indexes"><?php echo esc_html__('Refresh index list', 'fts-manager'); ?></button>
+                        <button class="button" id="refresh-indexes"><?php echo esc_html__('Refresh', 'fts-manager'); ?></button>
                         <div id="indexes-list"></div>
                     </div>
                     
@@ -62,15 +62,19 @@ class FTS_Manager {
                         <form id="create-index-form">
                             <table class="form-table">
                                 <tr>
-                                    <td colspan="2">
-                                        <label for="index-name"><?php echo esc_html__('Index Name', 'fts-manager'); ?></label><br>
-                                        <input type="text" id="index-name" name="index_name" size="45" placeholder="ft_product_search" required>
+                                    <th scope="row">
+                                        <label for="index-name"><?php echo esc_html__('Index Name', 'fts-manager'); ?></label>
+                                    </th>
+                                    <td>
+                                        <input type="text" id="index-name" name="index_name" class="regular-text" placeholder="ft_product_search" required>
                                         <p class="description"><?php echo esc_html__('Enter a unique name for the index (e.g., ft_product_name)', 'fts-manager'); ?></p>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td colspan="2">
-                                        <label><?php echo esc_html__('Columns', 'fts-manager'); ?></label><br>
+                                    <th scope="row">
+                                        <label><?php echo esc_html__('Columns', 'fts-manager'); ?></label>
+                                    </th>
+                                    <td>
                                         <label><input type="checkbox" name="columns[]" value="product_name"> product_name</label><br>
                                         <label><input type="checkbox" name="columns[]" value="product_short_description"> product_short_description</label><br>
                                         <label><input type="checkbox" name="columns[]" value="expanded_description"> expanded_description</label>
@@ -131,6 +135,16 @@ port*
                             </tr>
                             <tr>
                                 <th scope="row">
+                                    <label for="index-select"><?php echo esc_html__('Use Index', 'fts-manager'); ?></label>
+                                </th>
+                                <td>
+                                    <select id="index-select" name="index_name">
+                                        <option value=""><?php echo esc_html__('Select an index...', 'fts-manager'); ?></option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">
                                     <label for="result-limit"><?php echo esc_html__('Result Limit', 'fts-manager'); ?></label>
                                 </th>
                                 <td>
@@ -156,7 +170,7 @@ port*
             }
             .fts-container {
                 display: grid;
-                grid-template-columns: 420px 1fr;
+                grid-template-columns: 1fr 1fr;
                 gap: 20px;
                 margin-top: 20px;
             }
@@ -314,20 +328,14 @@ port*
             function displayIndexes(indexes) {
                 console.log('Displaying indexes:', indexes);
                 const container = $('#indexes-list');
+                const select = $('#index-select');
                 
                 container.empty();
+                select.find('option:not(:first)').remove();
                 
                 if (indexes.length === 0) {
-                    container.html('<p class="no-results"><strong>⚠️ No full-text indexes found.</strong><br>Create one below to enable search functionality.</p>');
-                    container.html('<p class="no-results"><strong>⚠️ No full-text indexes found.</strong><br>Create one below to enable search functionality.</p>');
-                    // Show warning in query section
-                    $('#query-results').html('<p class="no-results" style="background: #fff3cd; border-left: 4px solid #ffc107;"><strong>⚠️ No FTS Index Available</strong><br>Please create a full-text search index in the Index Management section before running queries.</p>');
+                    container.html('<p class="no-results">No full-text indexes found. Create one to get started.</p>');
                     return;
-                }
-                
-                // Clear the warning if indexes exist
-                if ($('#query-results p.no-results').text().includes('No FTS Index')) {
-                    $('#query-results').empty();
                 }
                 
                 indexes.forEach(function(index) {
@@ -340,6 +348,7 @@ port*
                         '<button class="button button-small delete-index" data-index="' + index.name + '">Delete</button>' +
                         '</div>';
                     container.append(indexHtml);
+                    select.append('<option value="' + index.name + '">' + index.name + ' (' + columns + ')</option>');
                 });
             }
             
@@ -435,10 +444,15 @@ port*
                 
                 const searchQuery = $('#search-query').val();
                 const searchMode = $('#search-mode').val();
+                const indexName = $('#index-select').val();
                 const limit = $('#result-limit').val();
                 
-                console.log('Search params - Query:', searchQuery, 'Mode:', searchMode, 'Limit:', limit);
+                console.log('Search params - Query:', searchQuery, 'Mode:', searchMode, 'Index:', indexName, 'Limit:', limit);
                 
+                if (!indexName) {
+                    showMessage('Please select an index', 'error');
+                    return;
+                }
                 
                 $('#query-results').html('<p>Searching...</p>');
                 
@@ -450,6 +464,7 @@ port*
                         action: 'fts_run_query',
                         search_query: searchQuery,
                         search_mode: searchMode,
+                        index_name: indexName,
                         limit: limit
                     },
                     success: function(response) {
@@ -489,7 +504,7 @@ port*
                 }
                 
                 html += '<table class="results-table">';
-                html += '<thead><tr><th>Rank</th><th>Product Name</th><th>Short Description</th><th>Expanded Description</th><th>Relevance</th></tr></thead>';
+                html += '<thead><tr><th>Rank</th><th>Product Name</th><th>Short Description</th><th>Relevance</th></tr></thead>';
                 html += '<tbody>';
                 
                 const maxScore = parseFloat(data.max_score) || 1;
@@ -502,7 +517,6 @@ port*
                     html += '<td>' + (index + 1) + '</td>';
                     html += '<td><strong>' + result.product_name + '</strong></td>';
                     html += '<td>' + result.product_short_description + '</td>';
-                    html += '<td>' + (result.expanded_description || '') + '</td>';
                     html += '<td>';
                     html += '<span class="relevance-score">' + score.toFixed(4) + '</span>';
                     html += '<div class="relevance-bar"><div class="relevance-bar-fill" style="width: ' + percentage + '%"></div></div>';
@@ -617,7 +631,7 @@ port*
         error_log('FTS: ajax_run_query called');
         error_log('FTS: POST data - ' . print_r($_POST, true));
         
-        if (!isset($_POST['search_query']) || !isset($_POST['search_mode']) || !isset($_POST['limit'])) {
+        if (!isset($_POST['search_query']) || !isset($_POST['search_mode']) || !isset($_POST['index_name']) || !isset($_POST['limit'])) {
             error_log('FTS: Missing required parameters');
             wp_send_json_error('Invalid parameters - missing required fields');
             return;
@@ -625,31 +639,18 @@ port*
         
         $search_query = sanitize_text_field($_POST['search_query']);
         $search_mode = sanitize_text_field($_POST['search_mode']);
+        $index_name = sanitize_text_field($_POST['index_name']);
         $limit = intval($_POST['limit']);
         
-        error_log("FTS: Query params - search: $search_query, mode: $search_mode, limit: $limit");
+        error_log("FTS: Query params - search: $search_query, mode: $search_mode, index: $index_name, limit: $limit");
         
-        if (empty($search_query)) {
-            error_log('FTS: Empty search query');
-            wp_send_json_error('Search query is required');
-            return;
-        }
-
-        // Get all FULLTEXT indexes for this table
-        $all_indexes = $wpdb->get_results(
-            "SHOW INDEX FROM {$this->table_name} WHERE Index_type = 'FULLTEXT'"
-        );
-        
-        error_log('FTS: All indexes - ' . print_r($all_indexes, true));
-        
-        if (empty($all_indexes)) {
-            error_log('FTS: No FULLTEXT indexes found');
-            wp_send_json_error('No full-text search indexes exist. Please create one first.');
+        if (empty($search_query) || empty($index_name)) {
+            error_log('FTS: Empty search query or index name');
+            wp_send_json_error('Search query and index name are required');
             return;
         }
         
-        // Get the first FULLTEXT index and its columns (MySQL will automatically choose the best one)
-        $index_name = $all_indexes[0]->Key_name;
+        // Get columns for this index
         $index_info = $wpdb->get_results($wpdb->prepare(
             "SHOW INDEX FROM {$this->table_name} WHERE Key_name = %s",
             $index_name
@@ -687,7 +688,7 @@ port*
         }
         
         $sql = $wpdb->prepare(
-            "SELECT product_name, product_short_description, expanded_description,
+            "SELECT product_name, product_short_description, 
                     MATCH({$columns_str}) {$against_clause} AS relevance_score
              FROM {$this->table_name}
              WHERE MATCH({$columns_str}) {$against_clause}
