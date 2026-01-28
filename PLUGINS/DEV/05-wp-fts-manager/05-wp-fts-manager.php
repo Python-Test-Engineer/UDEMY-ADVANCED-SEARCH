@@ -53,7 +53,7 @@ class FTS_Manager {
                     
                     <div class="fts-current-indexes">
                         <h3><?php echo esc_html__('Current Indexes', 'fts-manager'); ?></h3>
-                        <button class="button" id="refresh-indexes"><?php echo esc_html__('Refresh', 'fts-manager'); ?></button>
+                        <button class="button" id="refresh-indexes"><?php echo esc_html__('Refresh index list', 'fts-manager'); ?></button>
                         <div id="indexes-list"></div>
                     </div>
                     
