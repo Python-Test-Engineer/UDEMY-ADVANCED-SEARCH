@@ -593,25 +593,15 @@ class Posts_RAG_Manager {
                     data: {
                         action: 'get_rag_stats'
                     },
-                    beforeSend: function() {
-                        console.log('📡 Sending get_rag_stats request to:', ajaxurl);
-                    },
                     success: function(response) {
-                        console.log('✅ get_rag_stats response:', response);
+                        console.log('✅ Stats response:', response);
                         if (response.success) {
-                            console.log('📊 Updating stats container with:', response.data);
                             $('#stats-container').html(response.data);
-                            console.log('✓ Stats container updated successfully');
-                        } else {
-                            console.error('❌ Stats refresh failed:', response);
+                            console.log('✓ Stats updated');
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error('❌ Stats refresh error:', {
-                            status: status,
-                            error: error,
-                            xhr: xhr
-                        });
+                        console.error('❌ Stats error:', status, error);
                     }
                 });
             }
@@ -664,7 +654,6 @@ class Posts_RAG_Manager {
             $('#sync-posts-btn').on('click', function() {
                 var $btn = $(this);
                 
-                console.log('🔄 Sync Posts button clicked');
                 $btn.prop('disabled', true).text('Syncing...');
                 
                 $.ajax({
@@ -673,29 +662,19 @@ class Posts_RAG_Manager {
                     data: {
                         action: 'sync_posts'
                     },
-                    beforeSend: function() {
-                        console.log('📡 Sending sync_posts request');
-                    },
                     success: function(response) {
-                        console.log('✅ Sync posts response:', response);
+                        console.log('✅ Sync response:', response);
                         if (response.success) {
                             showMessage(response.data, 'success');
-                            console.log('⏳ Waiting 500ms before refreshing stats...');
-                            // Refresh statistics after a short delay to ensure DB commits
-                            setTimeout(function() {
-                                console.log('🔄 Now calling refreshStats()');
-                                refreshStats();
-                            }, 500);
+                            setTimeout(function() { refreshStats(); }, 500);
                         } else {
                             showMessage(response.data, 'error');
                         }
                     },
-                    error: function(xhr, status, error) {
-                        console.error('❌ Sync posts error:', {status: status, error: error});
+                    error: function() {
                         showMessage('An error occurred while syncing posts.', 'error');
                     },
                     complete: function() {
-                        console.log('✓ Sync posts complete');
                         $btn.prop('disabled', false).text('Sync Posts');
                     }
                 });
@@ -785,7 +764,6 @@ class Posts_RAG_Manager {
             $('#generate-embeddings-btn').on('click', function() {
                 var $btn = $(this);
                 
-                console.log('🔄 Generate Embeddings button clicked');
                 $btn.prop('disabled', true).text('Generating Embeddings...');
                 
                 $.ajax({
@@ -794,29 +772,17 @@ class Posts_RAG_Manager {
                     data: {
                         action: 'generate_embeddings'
                     },
-                    beforeSend: function() {
-                        console.log('📡 Sending generate_embeddings request');
-                    },
                     success: function(response) {
-                        console.log('✅ Generate embeddings response:', response);
                         if (response.success) {
                             showMessage(response.data, 'success');
-                            console.log('⏳ Waiting 500ms before refreshing stats...');
-                            // Refresh statistics after a short delay to ensure DB commits
-                            setTimeout(function() {
-                                console.log('🔄 Now calling refreshStats()');
-                                refreshStats();
-                            }, 500);
                         } else {
                             showMessage(response.data, 'error');
                         }
                     },
-                    error: function(xhr, status, error) {
-                        console.error('❌ Generate embeddings error:', {status: status, error: error});
+                    error: function() {
                         showMessage('An error occurred while generating embeddings.', 'error');
                     },
                     complete: function() {
-                        console.log('✓ Generate embeddings complete');
                         $btn.prop('disabled', false).text('Generate Embeddings');
                     }
                 });
