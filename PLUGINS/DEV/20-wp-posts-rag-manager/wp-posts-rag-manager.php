@@ -442,7 +442,7 @@ class Posts_RAG_Manager {
         $index_info = $this->get_fulltext_index_info();
         $index_exists = ($index_info !== null);
         ?>
-        <div class="wrap">
+        <div class="wrap" >
             <h1>Posts RAG Manager</h1>
             
             <div id="rag-message" style="display:none;" class="notice">
