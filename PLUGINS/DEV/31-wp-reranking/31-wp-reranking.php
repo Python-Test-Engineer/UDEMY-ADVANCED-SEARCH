@@ -101,6 +101,8 @@ class WP_Reranking_Plugin {
             $vector = null;
         }
 
+        $limit = $limit ? absint($limit) : 6;
+
         if (!$fulltext && !$vector) {
             if (empty($query)) {
                 return new WP_REST_Response(array(
@@ -108,8 +110,6 @@ class WP_Reranking_Plugin {
                     'message' => 'Missing query or payload.',
                 ), 400);
             }
-
-            $limit = $limit ? absint($limit) : 6;
             $search_payloads = $this->fetch_search_payloads($query, $limit);
 
             if (isset($search_payloads['error'])) {
@@ -129,7 +129,7 @@ class WP_Reranking_Plugin {
             'vector_count' => isset($vector['results']) ? count($vector['results']) : 0
         ));
 
-        $reranked = $this->rerank_results($fulltext, $vector);
+        $reranked = $this->rerank_results($fulltext, $vector, false, $limit, 6, $query);
 
         $this->log_debug('Returning reranked response.', array(
             'result_count' => count($reranked)
@@ -147,29 +147,111 @@ class WP_Reranking_Plugin {
     /**
      * Combine and rerank FTS + vector results.
      */
-    private function rerank_results($fulltext, $vector, $explain = false) {
+    private function rerank_results($fulltext, $vector, $explain = false, $limit = null, $per_method_limit = 6, $query = '') {
         $items = array();
         $max_relevance = 0;
         $max_similarity = 0;
         $steps = array();
+        $limit = $limit ? absint($limit) : null;
+        $per_method_limit = $per_method_limit ? absint($per_method_limit) : 6;
+        $per_method_limit = max(1, $per_method_limit);
+        $query = is_string($query) ? trim($query) : '';
 
         $this->log_debug('Starting rerank.', array(
             'fulltext_has_results' => is_array($fulltext) && isset($fulltext['results']),
             'vector_has_results' => is_array($vector) && isset($vector['results'])
         ));
 
+        $fulltext_results = (is_array($fulltext) && isset($fulltext['results']) && is_array($fulltext['results']))
+            ? $fulltext['results']
+            : array();
+        $vector_results = (is_array($vector) && isset($vector['results']) && is_array($vector['results']))
+            ? $vector['results']
+            : array();
+
         if ($explain) {
             $steps[] = array(
                 'step' => 'Input Data',
                 'description' => 'Received fulltext and vector search results.',
-                'fulltext_results' => isset($fulltext['results']) ? $fulltext['results'] : array(),
-                'vector_results' => isset($vector['results']) ? $vector['results'] : array()
+                'fulltext_results' => $fulltext_results,
+                'vector_results' => $vector_results
+            );
+        }
+
+        if ($query !== '') {
+            $fulltext_before_filter = count($fulltext_results);
+            $vector_before_filter = count($vector_results);
+
+            $fulltext_results = array_values(array_filter($fulltext_results, function ($item) use ($query) {
+                return $this->item_matches_query($item, $query);
+            }));
+
+            $vector_results = array_values(array_filter($vector_results, function ($item) use ($query) {
+                return $this->item_matches_query($item, $query);
+            }));
+
+            $this->log_debug('Query filter applied.', array(
+                'query' => $query,
+                'fulltext_before' => $fulltext_before_filter,
+                'fulltext_after' => count($fulltext_results),
+                'vector_before' => $vector_before_filter,
+                'vector_after' => count($vector_results)
+            ));
+
+            if ($explain) {
+                $steps[] = array(
+                    'step' => 'Query Filter',
+                'description' => 'Removed items that do not include the query text in title or content.',
+                    'query' => $query,
+                    'fulltext_results' => $fulltext_results,
+                    'vector_results' => $vector_results
+                );
+            }
+        }
+
+        $this->log_debug('Rerank input counts.', array(
+            'fulltext_count' => count($fulltext_results),
+            'vector_count' => count($vector_results),
+            'per_method_limit' => $per_method_limit
+        ));
+
+        // Enforce top N per method before normalization/merge.
+        if (!empty($fulltext_results)) {
+            usort($fulltext_results, function ($a, $b) {
+                $a_score = isset($a['relevance_score']) ? $a['relevance_score'] : 0;
+                $b_score = isset($b['relevance_score']) ? $b['relevance_score'] : 0;
+                return $b_score <=> $a_score;
+            });
+            $fulltext_results = array_slice($fulltext_results, 0, $per_method_limit);
+        }
+
+        if (!empty($vector_results)) {
+            usort($vector_results, function ($a, $b) {
+                $a_score = isset($a['similarity_score']) ? $a['similarity_score'] : 0;
+                $b_score = isset($b['similarity_score']) ? $b['similarity_score'] : 0;
+                return $b_score <=> $a_score;
+            });
+            $vector_results = array_slice($vector_results, 0, $per_method_limit);
+        }
+
+        $this->log_debug('Rerank trimmed counts.', array(
+            'fulltext_count' => count($fulltext_results),
+            'vector_count' => count($vector_results)
+        ));
+
+        if ($explain) {
+            $steps[] = array(
+                'step' => 'Trimmed Input Results',
+                'description' => 'Sorted by score and trimmed to per-method limit before normalization.',
+                'fulltext_results' => $fulltext_results,
+                'vector_results' => $vector_results,
+                'per_method_limit' => $per_method_limit
             );
         }
 
         // Capture the max relevance score to normalize later.
-        if (is_array($fulltext) && isset($fulltext['results']) && is_array($fulltext['results'])) {
-            foreach ($fulltext['results'] as $item) {
+        if (!empty($fulltext_results)) {
+            foreach ($fulltext_results as $item) {
                 if (isset($item['relevance_score']) && $item['relevance_score'] > $max_relevance) {
                     $max_relevance = $item['relevance_score'];
                 }
@@ -177,8 +259,8 @@ class WP_Reranking_Plugin {
         }
 
         // Capture the max similarity score to normalize later.
-        if (is_array($vector) && isset($vector['results']) && is_array($vector['results'])) {
-            foreach ($vector['results'] as $item) {
+        if (!empty($vector_results)) {
+            foreach ($vector_results as $item) {
                 if (isset($item['similarity_score']) && $item['similarity_score'] > $max_similarity) {
                     $max_similarity = $item['similarity_score'];
                 }
@@ -203,8 +285,8 @@ class WP_Reranking_Plugin {
         }
 
         // Seed items from fulltext results.
-        if (is_array($fulltext) && isset($fulltext['results']) && is_array($fulltext['results'])) {
-            foreach ($fulltext['results'] as $item) {
+        if (!empty($fulltext_results)) {
+            foreach ($fulltext_results as $item) {
                 $post_id = isset($item['post_id']) ? $item['post_id'] : null;
                 if (!$post_id) {
                     continue;
@@ -217,8 +299,8 @@ class WP_Reranking_Plugin {
         }
 
         // Merge vector scores into the combined list.
-        if (is_array($vector) && isset($vector['results']) && is_array($vector['results'])) {
-            foreach ($vector['results'] as $item) {
+        if (!empty($vector_results)) {
+            foreach ($vector_results as $item) {
                 $post_id = isset($item['post_id']) ? $item['post_id'] : null;
                 if (!$post_id) {
                     continue;
@@ -266,6 +348,12 @@ class WP_Reranking_Plugin {
             );
         }
 
+        $this->log_debug('Rerank normalization summary.', array(
+            'max_relevance' => $max_relevance,
+            'max_similarity' => $max_similarity,
+            'items_count' => count($items)
+        ));
+
         $items = array_values($items);
         usort($items, function ($a, $b) {
             if ($a['combined_score'] === $b['combined_score']) {
@@ -280,6 +368,24 @@ class WP_Reranking_Plugin {
                 'description' => 'Sorted results by combined score in descending order.',
                 'sorted_items' => $items
             );
+        }
+
+        if ($limit) {
+            $items = array_slice($items, 0, $limit);
+
+            if ($explain) {
+                $steps[] = array(
+                    'step' => 'Final Limit',
+                    'description' => 'Applied output limit after sorting by combined score.',
+                    'limit' => $limit,
+                    'limited_results' => $items
+                );
+            }
+
+            $this->log_debug('Rerank output limited.', array(
+                'limit' => $limit,
+                'result_count' => count($items)
+            ));
         }
 
         $position = 1;
@@ -365,6 +471,26 @@ class WP_Reranking_Plugin {
     }
 
     /**
+     * Check if a result item contains the query text in key fields.
+     */
+    private function item_matches_query($item, $query) {
+        if ($query === '') {
+            return true;
+        }
+
+        if (!is_array($item)) {
+            return false;
+        }
+
+        $title = !empty($item['post_title']) ? mb_strtolower($item['post_title']) : '';
+        $content = !empty($item['content']) ? mb_strtolower($item['content']) : '';
+        $needle = mb_strtolower($query);
+
+        return ($title !== '' && strpos($title, $needle) !== false)
+            || ($content !== '' && strpos($content, $needle) !== false);
+    }
+
+    /**
      * Split a hybrid payload list into synthetic fulltext/vector structures.
      */
     private function split_hybrid_results($results) {
@@ -416,39 +542,58 @@ class WP_Reranking_Plugin {
         $error = null;
 
         if (isset($_GET['rerank_submit'])) {
-            $remote_url = add_query_arg(
+            $fulltext_url = add_query_arg(
                 array(
                     'query' => $query,
                     'limit' => $limit,
                 ),
-                home_url('/wp-json/search/v1/hybrid-search')
+                home_url('/wp-json/search/v1/search')
             );
-            $this->log_debug('Admin test requesting hybrid search.', array('url' => $remote_url));
 
-            $remote_response = wp_remote_get($remote_url, array('timeout' => 20));
-            if (is_wp_error($remote_response)) {
-                $error = $remote_response->get_error_message();
-                $this->log_debug('Admin test request failed.', array('error' => $error));
-            } else {
-                $body = wp_remote_retrieve_body($remote_response);
-                $data = json_decode($body, true);
+            $vector_url = add_query_arg(
+                array(
+                    'query' => $query,
+                    'limit' => $limit,
+                ),
+                home_url('/wp-json/search/v1/vector-search')
+            );
 
-                $this->log_debug('Admin test response received.', array(
-                    'response_length' => strlen($body),
-                    'decoded' => is_array($data)
+            $this->log_debug('Admin test requesting separate search endpoints.', array(
+                'fulltext_url' => $fulltext_url,
+                'vector_url' => $vector_url
+            ));
+
+            $fulltext_response = wp_remote_get($fulltext_url, array('timeout' => 20));
+            if (is_wp_error($fulltext_response)) {
+                $error = $fulltext_response->get_error_message();
+                $this->log_debug('Admin fulltext request failed.', array('error' => $error));
+                $fulltext_response = null;
+            }
+
+            $vector_response = wp_remote_get($vector_url, array('timeout' => 20));
+            if (is_wp_error($vector_response)) {
+                $error = $vector_response->get_error_message();
+                $this->log_debug('Admin vector request failed.', array('error' => $error));
+                $vector_response = null;
+            }
+
+            if ($fulltext_response && $vector_response) {
+                $fulltext_body = wp_remote_retrieve_body($fulltext_response);
+                $vector_body = wp_remote_retrieve_body($vector_response);
+
+                $fulltext_data = json_decode($fulltext_body, true);
+                $vector_data = json_decode($vector_body, true);
+
+                $this->log_debug('Admin test responses received.', array(
+                    'fulltext_decoded' => is_array($fulltext_data),
+                    'vector_decoded' => is_array($vector_data)
                 ));
 
-                if (is_array($data)) {
-                    $fulltext = isset($data['fulltext_search']) ? $data['fulltext_search'] : null;
-                    $vector = isset($data['vector_search']) ? $data['vector_search'] : null;
+                if (is_array($fulltext_data) && is_array($vector_data)) {
+                    $fulltext = $fulltext_data;
+                    $vector = $vector_data;
 
-                    if (!$fulltext && isset($data['results']) && is_array($data['results'])) {
-                        $split = $this->split_hybrid_results($data['results']);
-                        $fulltext = $split['fulltext'];
-                        $vector = $split['vector'];
-                    }
-
-                    $rerank_result = $this->rerank_results($fulltext, $vector, true);
+                    $rerank_result = $this->rerank_results($fulltext, $vector, true, $limit, 6, $query);
                     if (is_array($rerank_result) && isset($rerank_result['results'])) {
                         $output = array(
                             'success' => true,
@@ -456,21 +601,24 @@ class WP_Reranking_Plugin {
                             'method' => 'reranking',
                             'results' => $rerank_result['results'],
                             'steps' => $rerank_result['steps'],
-                            'count' => isset($data['count']) ? $data['count'] : null,
+                            'count' => isset($fulltext_data['count']) ? $fulltext_data['count'] : null,
+                            'fulltext_count' => isset($fulltext_data['count']) ? $fulltext_data['count'] : null,
+                            'vector_count' => isset($vector_data['count']) ? $vector_data['count'] : null,
                         );
                     } else {
-                        // Fallback if not array
                         $output = array(
                             'success' => true,
                             'query' => $query,
                             'method' => 'reranking',
                             'results' => $rerank_result,
-                            'count' => isset($data['count']) ? $data['count'] : null,
+                            'count' => isset($fulltext_data['count']) ? $fulltext_data['count'] : null,
                         );
                     }
                 } else {
-                    $error = 'Invalid response from hybrid search endpoint.';
+                    $error = 'Invalid response from search endpoints.';
                 }
+            } elseif (!$error) {
+                $error = 'Failed to fetch one or more search endpoints.';
             }
         }
 

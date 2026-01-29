@@ -2,7 +2,7 @@ Below is the **exact, authoritative answer** you’re looking for — and the sh
 
 ---
 
-I searched docs and there is no reference to changing these values.
+I searched docs and there is no reference to changing these values.t
 
 # **📌 Short Answer (Exact Reference Included)**
 **MySQL’s InnoDB FULLTEXT search uses a *fixed* BM25 implementation.  
