@@ -85,6 +85,8 @@ class WP_Signals_Plugin {
             array(
                 'ajaxUrl' => admin_url( 'admin-ajax.php' ),
                 'nonce'   => wp_create_nonce( self::NONCE_ACTION ),
+                'hybridSearchUrl' => rest_url( 'search/v1/hybrid-search' ),
+                'limit'  => 3,
             )
         );
     }

@@ -141,11 +141,12 @@
         renderEmptyState('Loading results...');
 
         try {
-            const response = await fetch(
-                `https://mydigitalagent.co.uk/hybrid/wp-json/search/v1/search?query=${encodeURIComponent(
-                    query
-                )}`
-            );
+            const limit = Number(wpSignalsData.limit) || 3;
+            const url = new URL(wpSignalsData.hybridSearchUrl, window.location.origin);
+            url.searchParams.set('query', query);
+            url.searchParams.set('limit', String(limit));
+
+            const response = await fetch(url.toString());
 
             console.log('[wp-signals] Raw response:', response);
 
