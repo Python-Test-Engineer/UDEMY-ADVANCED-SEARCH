@@ -1,10 +1,10 @@
 <?php
 /**
- * Plugin Name: ✅ 20.1 UDEMY CAPSTONE 07 TEST RAG SEARCH ASSISTANT
+ * Plugin Name: ✅ 21 POSTS RAG SEARCH
  * Plugin URI: https://mydigitalagent.co.uk
  * Description: AI-powered search assistant using Full Text Search and Vector Search APIs with OpenAI
  * Version: 1.0.0
- * Author: Your Name
+ * Author: Craig West
  * Author URI: https://mydigitalagent.co.uk
  * License: GPL v2 or later
  * Text Domain: rag-search-assistant
@@ -31,8 +31,8 @@ class RAG_Search_Assistant {
     
     public function add_admin_menu() {
         add_menu_page(
-            '20.1 CAPSTONE RAG SEARCH',
-            '20.1 SEARCH',
+            '21 POSTS RAG SEARCH',
+            '21 POSTS SEARCH',
             'edit_posts',
             'rag-search-assistant',
             array($this, 'render_admin_page'),
