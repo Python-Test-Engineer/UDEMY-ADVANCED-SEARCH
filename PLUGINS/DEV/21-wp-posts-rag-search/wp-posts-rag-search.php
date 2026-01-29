@@ -527,7 +527,12 @@ class RAG_Search_Assistant {
         
         // Sort results by score (highest first)
         $fts_results['results'] = $this->sort_by_score($fts_results['results']);
+        // Limit to user's requested number after sorting (take top N best results)
+        $fts_results['results'] = array_slice($fts_results['results'], 0, $limit);
+        
         $vector_results['results'] = $this->sort_by_similarity($vector_results['results']);
+        // Limit to user's requested number after sorting (take top N best results)
+        $vector_results['results'] = array_slice($vector_results['results'], 0, $limit);
         
         // Extract post IDs with validation
         $fts_ids = array();
@@ -563,7 +568,10 @@ class RAG_Search_Assistant {
     }
     
     private function fetch_fulltext_search($query, $limit, &$debug_info) {
-        $url = $this->get_api_base_url() . 'search?query=' . urlencode($query) . '&limit=' . $limit;
+        // Always fetch MORE results (10) to ensure we get the best matches, then we'll filter to the limit later
+        // The API might have its own ranking, so we fetch extra to ensure we don't miss good results
+        $fetch_limit = max(10, $limit);
+        $url = $this->get_api_base_url() . 'search?query=' . urlencode($query) . '&limit=' . $fetch_limit;
         
         $debug_info['fts_url'] = $url;
         
@@ -597,16 +605,44 @@ class RAG_Search_Assistant {
         $debug_info['fts_success'] = true;
         $debug_info['fts_results_count'] = isset($decoded['results']) ? count($decoded['results']) : 0;
         
+        // Store API scores before recalculation for debugging
+        if (isset($decoded['results']) && is_array($decoded['results'])) {
+            $api_scores = array();
+            foreach ($decoded['results'] as $r) {
+                if (isset($r['post_id'])) {
+                    $api_scores[$r['post_id']] = array(
+                        'title' => isset($r['post_title']) ? $r['post_title'] : 'N/A',
+                        'api_score' => isset($r['score']) ? $r['score'] : 'N/A'
+                    );
+                }
+            }
+            $debug_info['fts_api_scores'] = $api_scores;
+        }
+        
         // Calculate scores if not provided by API
         if (isset($decoded['results']) && is_array($decoded['results'])) {
             $decoded['results'] = $this->calculate_fts_scores($decoded['results'], $query);
+            
+            // Store recalculated scores for debugging
+            $recalc_scores = array();
+            foreach ($decoded['results'] as $r) {
+                if (isset($r['post_id'])) {
+                    $recalc_scores[$r['post_id']] = array(
+                        'title' => isset($r['post_title']) ? $r['post_title'] : 'N/A',
+                        'new_score' => isset($r['score']) ? $r['score'] : 'N/A'
+                    );
+                }
+            }
+            $debug_info['fts_recalc_scores'] = $recalc_scores;
         }
         
         return $decoded;
     }
     
     private function fetch_vector_search($query, $limit, &$debug_info) {
-        $url = $this->get_api_base_url() . 'vector-search?query=' . urlencode($query) . '&limit=' . $limit;
+        // Always fetch MORE results (10) to ensure we get the best matches, then we'll filter to the limit later
+        $fetch_limit = max(10, $limit);
+        $url = $this->get_api_base_url() . 'vector-search?query=' . urlencode($query) . '&limit=' . $fetch_limit;
         
         $debug_info['vector_url'] = $url;
         
@@ -658,13 +694,10 @@ class RAG_Search_Assistant {
         
         // Normalize and tokenize query
         $query_terms = array_map('strtolower', array_filter(explode(' ', preg_replace('/[^\w\s]/', ' ', $query))));
+        $query_lower = strtolower($query);
         
         foreach ($results as &$result) {
-            // Skip if score already exists
-            if (isset($result['score']) && $result['score'] !== null) {
-                continue;
-            }
-            
+            // Always recalculate scores to ensure consistent ranking
             $score = 0;
             
             // Get text fields
@@ -680,11 +713,6 @@ class RAG_Search_Assistant {
                 $title_matches = substr_count($title, $term);
                 $score += $title_matches * 10;
                 
-                // Exact title match bonus
-                if (strpos($title, strtolower($query)) !== false) {
-                    $score += 20;
-                }
-                
                 // Categories matches
                 $category_matches = substr_count($categories, $term);
                 $score += $category_matches * 5;
@@ -696,6 +724,11 @@ class RAG_Search_Assistant {
                 // Excerpt/content matches (lower weight)
                 $excerpt_matches = substr_count($excerpt, $term);
                 $score += $excerpt_matches * 1;
+            }
+            
+            // Exact title match bonus (OUTSIDE the loop so it's only added once)
+            if (strpos($title, $query_lower) !== false) {
+                $score += 20;
             }
             
             // Normalize score (0-100 range)
@@ -718,11 +751,7 @@ class RAG_Search_Assistant {
         $query_length = count($query_terms);
         
         foreach ($results as &$result) {
-            // Skip if similarity already exists
-            if (isset($result['similarity']) && $result['similarity'] !== null) {
-                continue;
-            }
-            
+            // Always recalculate similarity to ensure consistent ranking
             $score = 0;
             $matches = 0;
             
