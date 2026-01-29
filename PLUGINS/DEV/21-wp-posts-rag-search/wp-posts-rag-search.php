@@ -64,20 +64,46 @@ class RAG_Search_Assistant {
             font-size: 16px;
         }
         .rag-query-input {
-            width: 70%;
+            width: 100%;
             padding: 12px;
             font-size: 16px;
             border: 2px solid #ddd;
             border-radius: 4px;
-            margin-right: 10px;
         }
         .rag-query-input:focus {
             outline: none;
             border-color: #0073aa;
         }
+        .rag-limit-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+        .rag-limit-input:focus {
+            outline: none;
+            border-color: #0073aa;
+        }
+        .rag-input-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+        .rag-input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .rag-input-group.query {
+            flex: 1;
+        }
+        .rag-input-group.limit {
+            min-width: 150px;
+        }
         #rag-search-btn {
             padding: 12px 30px;
             font-size: 16px;
+            align-self: flex-end;
         }
         .rag-loading {
             text-align: center;
@@ -136,6 +162,26 @@ class RAG_Search_Assistant {
             color: #666;
             margin-bottom: 12px;
             line-height: 1.8;
+        }
+        .rag-score-badge {
+            display: inline-block;
+            background: #0073aa;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .rag-similarity-badge {
+            display: inline-block;
+            background: #46b450;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 4px;
         }
         .rag-result-excerpt {
             font-size: 14px;
@@ -201,9 +247,17 @@ class RAG_Search_Assistant {
             
             <div class="rag-search-container">
                 <div class="rag-search-input-section">
-                    <label for="rag-query">Ask a question:</label>
-                    <input type="text" id="rag-query" class="rag-query-input" value="What foam products do you have">
-                    <button id="rag-search-btn" class="button button-primary">Search</button>
+                    <div class="rag-input-row">
+                        <div class="rag-input-group query">
+                            <label for="rag-query">Ask a question:</label>
+                            <input type="text" id="rag-query" class="rag-query-input" value="What foam products do you have">
+                        </div>
+                        <div class="rag-input-group limit">
+                            <label for="rag-limit">Results per API:</label>
+                            <input type="number" id="rag-limit" class="rag-limit-input" value="2" min="1" max="20">
+                        </div>
+                        <button id="rag-search-btn" class="button button-primary">Search</button>
+                    </div>
                 </div>
                 
                 <div id="rag-loading" class="rag-loading" style="display: none;">
@@ -228,148 +282,201 @@ class RAG_Search_Assistant {
         jQuery(document).ready(function($) {
             console.log('RAG Search initialized');
             
-            $('#rag-search-btn').on('click', function() {
-                console.log('Button clicked');
-                performSearch();
-            });
-            
+            // Handle Enter key in query input
             $('#rag-query').on('keypress', function(e) {
                 if (e.which === 13) {
-                    performSearch();
+                    $('#rag-search-btn').click();
                 }
             });
             
-            function performSearch() {
-                const query = $('#rag-query').val().trim();
-                console.log('Performing search for:', query);
+            // Handle Enter key in limit input
+            $('#rag-limit').on('keypress', function(e) {
+                if (e.which === 13) {
+                    $('#rag-search-btn').click();
+                }
+            });
+            
+            $('#rag-search-btn').on('click', function() {
+                console.log('Search button clicked');
+                
+                var query = $('#rag-query').val().trim();
+                var limit = parseInt($('#rag-limit').val()) || 2;
+                
+                // Validate limit
+                if (limit < 1) limit = 1;
+                if (limit > 20) limit = 20;
+                $('#rag-limit').val(limit);
+                
+                console.log('Query:', query);
+                console.log('Limit:', limit);
                 
                 if (!query) {
                     alert('Please enter a search query');
                     return;
                 }
                 
+                // Show loading, hide previous results
                 $('#rag-loading').show();
-                $('#rag-results').empty();
+                $('#rag-results').html('');
                 $('#rag-context-section').hide();
                 $('#rag-metadata').hide();
                 
                 $.ajax({
-                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    url: ajaxurl,
                     type: 'POST',
                     data: {
                         action: 'rag_search_query',
-                        nonce: '<?php echo wp_create_nonce('rag_search_nonce'); ?>',
                         query: query,
-                        limit: 5
+                        limit: limit
                     },
                     success: function(response) {
-                        console.log('✅ AJAX Response:', response);
-                        
-                        // Log debug info if available
-                        if (response.data && response.data.debug) {
-                            console.log('🔍 Debug Info:', response.data.debug);
-                        }
-                        
+                        console.log('AJAX Response:', response);
                         $('#rag-loading').hide();
                         
                         if (response.success) {
-                            console.log('✅ Search successful!');
                             displayResults(response.data);
                         } else {
-                            console.error('❌ Search failed:', response.data);
-                            $('#rag-results').html('<div class="error"><p>' + (response.data ? response.data.message : 'Unknown error') + '</p></div>');
+                            var errorMessage = response.data && response.data.message ? 
+                                response.data.message : 'An error occurred';
+                            $('#rag-results').html('<div class="error">' + errorMessage + '</div>');
+                            
+                            // Show debug info if available
+                            if (response.data && response.data.debug) {
+                                console.log('Debug info:', response.data.debug);
+                                displayDebugInfo(response.data.debug);
+                            }
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error('Ajax error:', error);
-                        console.error('Response:', xhr.responseText);
+                        console.error('AJAX Error:', error);
+                        console.log('XHR:', xhr);
                         $('#rag-loading').hide();
-                        $('#rag-results').html('<div class="error"><p>An error occurred: ' + error + '</p></div>');
+                        $('#rag-results').html('<div class="error">Network error: ' + error + '</div>');
                     }
                 });
-            }
+            });
             
             function displayResults(data) {
-                console.log('Displaying results:', data);
+                var html = '';
                 
-                let html = '<div class="rag-answer-box">';
-                html += '<h2>Answer</h2>';
-                html += '<div class="rag-answer">' + escapeHtml(data.answer) + '</div>';
-                html += '</div>';
+                // Display answer
+                if (data.answer) {
+                    html += '<div class="rag-answer-box">';
+                    html += '<h2>Answer</h2>';
+                    html += '<div class="rag-answer">' + escapeHtml(data.answer) + '</div>';
+                    html += '</div>';
+                }
                 
-                html += '<div class="rag-search-results">';
-                html += '<h3>Full Text Search Results</h3>';
-                
+                // Display FTS results
                 if (data.fts_results && data.fts_results.length > 0) {
+                    html += '<div class="rag-search-results">';
+                    html += '<h3>Full Text Search Results (Sorted by Score - Highest First)</h3>';
                     html += '<div class="rag-results-grid">';
+                    
                     data.fts_results.forEach(function(result) {
                         html += '<div class="rag-result-card">';
                         html += '<h4>' + escapeHtml(result.post_title) + '</h4>';
-                        html += '<p class="rag-result-meta">';
-                        html += '<strong>Relevance Score:</strong> ' + result.relevance_score.toFixed(2) + '<br>';
+                        html += '<div class="rag-result-meta">';
+                        html += '<strong>ID:</strong> ' + result.post_id + '<br>';
                         html += '<strong>Categories:</strong> ' + escapeHtml(result.categories) + '<br>';
-                        if (result.tags) {
-                            html += '<strong>Tags:</strong> ' + escapeHtml(result.tags) + '<br>';
+                        html += '<strong>Tags:</strong> ' + escapeHtml(result.tags) + '<br>';
+                        if (result.score !== undefined) {
+                            html += '<span class="rag-score-badge">Score: ' + result.score.toFixed(2) + '</span>';
+                        } else {
+                            html += '<span class="rag-score-badge">Score: N/A</span>';
                         }
-                        html += '</p>';
-                        html += '<p class="rag-result-excerpt">' + escapeHtml(result.excerpt) + '</p>';
+                        html += '</div>';
+                        html += '<div class="rag-result-excerpt">' + escapeHtml(result.excerpt) + '</div>';
                         html += '</div>';
                     });
-                    html += '</div>';
-                } else {
-                    html += '<p>No full text search results found.</p>';
+                    
+                    html += '</div></div>';
                 }
                 
-                html += '<h3>Vector Search Results</h3>';
-                
+                // Display Vector Search results
                 if (data.vector_results && data.vector_results.length > 0) {
+                    html += '<div class="rag-search-results">';
+                    html += '<h3>Vector Search Results (Sorted by Similarity - Highest First)</h3>';
                     html += '<div class="rag-results-grid">';
+                    
                     data.vector_results.forEach(function(result) {
                         html += '<div class="rag-result-card">';
                         html += '<h4>' + escapeHtml(result.post_title) + '</h4>';
-                        html += '<p class="rag-result-meta">';
-                        html += '<strong>Similarity Score:</strong> ' + result.similarity_score.toFixed(4) + '<br>';
+                        html += '<div class="rag-result-meta">';
+                        html += '<strong>ID:</strong> ' + result.post_id + '<br>';
                         html += '<strong>Categories:</strong> ' + escapeHtml(result.categories) + '<br>';
-                        if (result.tags) {
-                            html += '<strong>Tags:</strong> ' + escapeHtml(result.tags) + '<br>';
+                        html += '<strong>Tags:</strong> ' + escapeHtml(result.tags) + '<br>';
+                        if (result.similarity !== undefined) {
+                            html += '<span class="rag-similarity-badge">Similarity: ' + result.similarity.toFixed(4) + '</span>';
+                        } else {
+                            html += '<span class="rag-similarity-badge">Similarity: N/A</span>';
                         }
-                        html += '</p>';
-                        html += '<p class="rag-result-excerpt">' + escapeHtml(result.excerpt) + '</p>';
+                        html += '</div>';
+                        html += '<div class="rag-result-excerpt">' + escapeHtml(result.excerpt) + '</div>';
                         html += '</div>';
                     });
-                    html += '</div>';
-                } else {
-                    html += '<p>No vector search results found.</p>';
+                    
+                    html += '</div></div>';
                 }
-                
-                html += '</div>';
                 
                 $('#rag-results').html(html);
                 
-                $('#rag-context').html('<pre>' + escapeHtml(data.context) + '</pre>');
-                $('#rag-context-section').show();
+                // Display context
+                if (data.context) {
+                    $('#rag-context').html('<pre>' + escapeHtml(data.context) + '</pre>');
+                    $('#rag-context-section').show();
+                }
                 
-                let metaHtml = '<div class="rag-meta-info">';
-                metaHtml += '<p><strong>Query:</strong> ' + escapeHtml(data.query) + '</p>';
-                metaHtml += '<p><strong>FTS Post IDs:</strong> [' + data.fts_ids.join(', ') + ']</p>';
-                metaHtml += '<p><strong>Vector Post IDs:</strong> [' + data.vector_ids.join(', ') + ']</p>';
-                metaHtml += '<p><strong>Total Unique Posts:</strong> ' + new Set([...data.fts_ids, ...data.vector_ids]).size + '</p>';
+                // Display metadata
+                if (data.debug) {
+                    displayDebugInfo(data.debug);
+                }
+            }
+            
+            function displayDebugInfo(debug) {
+                var metaHtml = '<div class="rag-meta-info">';
+                metaHtml += '<p><strong>Query:</strong> ' + escapeHtml(debug.query) + '</p>';
+                metaHtml += '<p><strong>Limit:</strong> ' + debug.limit + '</p>';
+                
+                if (debug.fts_url) {
+                    metaHtml += '<p><strong>FTS URL:</strong> ' + escapeHtml(debug.fts_url) + '</p>';
+                }
+                if (debug.fts_status_code) {
+                    metaHtml += '<p><strong>FTS Status:</strong> ' + debug.fts_status_code + '</p>';
+                }
+                if (debug.fts_results_count !== undefined) {
+                    metaHtml += '<p><strong>FTS Results:</strong> ' + debug.fts_results_count + '</p>';
+                }
+                
+                if (debug.vector_url) {
+                    metaHtml += '<p><strong>Vector URL:</strong> ' + escapeHtml(debug.vector_url) + '</p>';
+                }
+                if (debug.vector_status_code) {
+                    metaHtml += '<p><strong>Vector Status:</strong> ' + debug.vector_status_code + '</p>';
+                }
+                if (debug.vector_results_count !== undefined) {
+                    metaHtml += '<p><strong>Vector Results:</strong> ' + debug.vector_results_count + '</p>';
+                }
+                
+                if (debug.fts_error) {
+                    metaHtml += '<p><strong>FTS Error:</strong> <span style="color: red;">' + 
+                        escapeHtml(debug.fts_error) + '</span></p>';
+                }
+                if (debug.vector_error) {
+                    metaHtml += '<p><strong>Vector Error:</strong> <span style="color: red;">' + 
+                        escapeHtml(debug.vector_error) + '</span></p>';
+                }
+                
                 metaHtml += '</div>';
-                
                 $('#rag-metadata-content').html(metaHtml);
                 $('#rag-metadata').show();
             }
             
             function escapeHtml(text) {
-                if (!text) return '';
-                const map = {
-                    '&': '&amp;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    '"': '&quot;',
-                    "'": '&#039;'
-                };
-                return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+                if (typeof text !== 'string') return text;
+                var div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
             }
         });
         </script>
@@ -377,23 +484,14 @@ class RAG_Search_Assistant {
     }
     
     public function handle_search_query() {
-        // Verify nonce
-        check_ajax_referer('rag_search_nonce', 'nonce');
-        
-        // Debug info array to send to console
         $debug_info = array();
         
-        // Validate POST data exists
-        if (!isset($_POST['query'])) {
-            wp_send_json_error(array(
-                'message' => 'Query parameter is missing',
-                'debug' => 'POST query parameter not set'
-            ));
-            return;
-        }
+        $query = isset($_POST['query']) ? sanitize_text_field($_POST['query']) : '';
+        $limit = isset($_POST['limit']) ? intval($_POST['limit']) : 2;
         
-        $query = sanitize_text_field($_POST['query']);
-        $limit = isset($_POST['limit']) ? intval($_POST['limit']) : 5;
+        // Validate limit
+        if ($limit < 1) $limit = 1;
+        if ($limit > 20) $limit = 20;
         
         $debug_info['query'] = $query;
         $debug_info['limit'] = $limit;
@@ -426,6 +524,10 @@ class RAG_Search_Assistant {
             ));
             return;
         }
+        
+        // Sort results by score (highest first)
+        $fts_results['results'] = $this->sort_by_score($fts_results['results']);
+        $vector_results['results'] = $this->sort_by_similarity($vector_results['results']);
         
         // Extract post IDs with validation
         $fts_ids = array();
@@ -534,6 +636,44 @@ class RAG_Search_Assistant {
         $debug_info['vector_results_count'] = isset($decoded['results']) ? count($decoded['results']) : 0;
         
         return $decoded;
+    }
+    
+    private function sort_by_score($results) {
+        if (empty($results)) {
+            return $results;
+        }
+        
+        usort($results, function($a, $b) {
+            $score_a = isset($a['score']) ? floatval($a['score']) : 0;
+            $score_b = isset($b['score']) ? floatval($b['score']) : 0;
+            
+            // Sort descending (highest score first)
+            if ($score_a == $score_b) {
+                return 0;
+            }
+            return ($score_a > $score_b) ? -1 : 1;
+        });
+        
+        return $results;
+    }
+    
+    private function sort_by_similarity($results) {
+        if (empty($results)) {
+            return $results;
+        }
+        
+        usort($results, function($a, $b) {
+            $sim_a = isset($a['similarity']) ? floatval($a['similarity']) : 0;
+            $sim_b = isset($b['similarity']) ? floatval($b['similarity']) : 0;
+            
+            // Sort descending (highest similarity first)
+            if ($sim_a == $sim_b) {
+                return 0;
+            }
+            return ($sim_a > $sim_b) ? -1 : 1;
+        });
+        
+        return $results;
     }
     
     private function build_context($fts_results, $vector_results) {
