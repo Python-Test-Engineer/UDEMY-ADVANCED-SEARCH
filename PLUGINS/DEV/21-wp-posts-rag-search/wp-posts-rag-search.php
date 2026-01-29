@@ -597,6 +597,11 @@ class RAG_Search_Assistant {
         $debug_info['fts_success'] = true;
         $debug_info['fts_results_count'] = isset($decoded['results']) ? count($decoded['results']) : 0;
         
+        // Calculate scores if not provided by API
+        if (isset($decoded['results']) && is_array($decoded['results'])) {
+            $decoded['results'] = $this->calculate_fts_scores($decoded['results'], $query);
+        }
+        
         return $decoded;
     }
     
@@ -635,7 +640,138 @@ class RAG_Search_Assistant {
         $debug_info['vector_success'] = true;
         $debug_info['vector_results_count'] = isset($decoded['results']) ? count($decoded['results']) : 0;
         
+        // Calculate similarity scores if not provided by API
+        if (isset($decoded['results']) && is_array($decoded['results'])) {
+            $decoded['results'] = $this->calculate_vector_scores($decoded['results'], $query);
+        }
+        
         return $decoded;
+    }
+    
+    /**
+     * Calculate relevance scores for Full Text Search results
+     */
+    private function calculate_fts_scores($results, $query) {
+        if (empty($results)) {
+            return $results;
+        }
+        
+        // Normalize and tokenize query
+        $query_terms = array_map('strtolower', array_filter(explode(' ', preg_replace('/[^\w\s]/', ' ', $query))));
+        
+        foreach ($results as &$result) {
+            // Skip if score already exists
+            if (isset($result['score']) && $result['score'] !== null) {
+                continue;
+            }
+            
+            $score = 0;
+            
+            // Get text fields
+            $title = isset($result['post_title']) ? strtolower($result['post_title']) : '';
+            $excerpt = isset($result['excerpt']) ? strtolower($result['excerpt']) : '';
+            $categories = isset($result['categories']) ? strtolower($result['categories']) : '';
+            $tags = isset($result['tags']) ? strtolower($result['tags']) : '';
+            
+            foreach ($query_terms as $term) {
+                if (strlen($term) < 2) continue; // Skip very short terms
+                
+                // Title matches (highest weight)
+                $title_matches = substr_count($title, $term);
+                $score += $title_matches * 10;
+                
+                // Exact title match bonus
+                if (strpos($title, strtolower($query)) !== false) {
+                    $score += 20;
+                }
+                
+                // Categories matches
+                $category_matches = substr_count($categories, $term);
+                $score += $category_matches * 5;
+                
+                // Tags matches
+                $tag_matches = substr_count($tags, $term);
+                $score += $tag_matches * 5;
+                
+                // Excerpt/content matches (lower weight)
+                $excerpt_matches = substr_count($excerpt, $term);
+                $score += $excerpt_matches * 1;
+            }
+            
+            // Normalize score (0-100 range)
+            $result['score'] = min(100, $score);
+        }
+        
+        return $results;
+    }
+    
+    /**
+     * Calculate similarity scores for Vector Search results
+     */
+    private function calculate_vector_scores($results, $query) {
+        if (empty($results)) {
+            return $results;
+        }
+        
+        // Normalize and tokenize query
+        $query_terms = array_map('strtolower', array_filter(explode(' ', preg_replace('/[^\w\s]/', ' ', $query))));
+        $query_length = count($query_terms);
+        
+        foreach ($results as &$result) {
+            // Skip if similarity already exists
+            if (isset($result['similarity']) && $result['similarity'] !== null) {
+                continue;
+            }
+            
+            $score = 0;
+            $matches = 0;
+            
+            // Get text fields
+            $title = isset($result['post_title']) ? strtolower($result['post_title']) : '';
+            $excerpt = isset($result['excerpt']) ? strtolower($result['excerpt']) : '';
+            $categories = isset($result['categories']) ? strtolower($result['categories']) : '';
+            $tags = isset($result['tags']) ? strtolower($result['tags']) : '';
+            
+            // Combine all text
+            $all_text = $title . ' ' . $excerpt . ' ' . $categories . ' ' . $tags;
+            $all_terms = array_unique(array_map('strtolower', array_filter(explode(' ', preg_replace('/[^\w\s]/', ' ', $all_text)))));
+            
+            // Calculate term overlap
+            foreach ($query_terms as $term) {
+                if (strlen($term) < 2) continue;
+                
+                foreach ($all_terms as $doc_term) {
+                    // Exact match
+                    if ($term === $doc_term) {
+                        $matches++;
+                        $score += 1.0;
+                        break;
+                    }
+                    // Partial match (term is substring or vice versa)
+                    if (strlen($term) > 3 && (strpos($doc_term, $term) !== false || strpos($term, $doc_term) !== false)) {
+                        $matches += 0.5;
+                        $score += 0.5;
+                        break;
+                    }
+                }
+            }
+            
+            // Calculate similarity as ratio of matched terms (0-1 scale)
+            if ($query_length > 0) {
+                $result['similarity'] = min(1.0, $matches / $query_length);
+            } else {
+                $result['similarity'] = 0.0;
+            }
+            
+            // Boost for title matches
+            foreach ($query_terms as $term) {
+                if (strlen($term) > 2 && strpos($title, $term) !== false) {
+                    $result['similarity'] = min(1.0, $result['similarity'] + 0.1);
+                }
+            }
+        }
+        
+        return $results;
     }
     
     private function sort_by_score($results) {
