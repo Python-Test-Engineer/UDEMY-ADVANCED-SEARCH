@@ -28,6 +28,7 @@ class WP_REST_RAG_Endpoints {
         add_action('wp_ajax_test_rag_search', array($this, 'ajax_test_search'));
         add_action('wp_ajax_test_rag_vector_search', array($this, 'ajax_test_vector_search'));
         add_action('wp_ajax_test_rag_hybrid_search', array($this, 'ajax_test_hybrid_search'));
+        add_action('wp_ajax_create_rag_fulltext_index', array($this, 'ajax_create_fulltext_index'));
     }
 
     /**
@@ -124,12 +125,29 @@ class WP_REST_RAG_Endpoints {
             wp_die('Unauthorized access');
         }
 
+        $index_exists = $this->check_fulltext_index();
+
         ?>
         <div class="wrap">
             <h1>WP REST RAG Endpoints</h1>
 
             <div id="rag-message" style="display:none;" class="notice">
                 <p></p>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <h2>Full-Text Index</h2>
+                <p>The REST full-text search endpoint requires a MySQL full-text index.</p>
+                <p>Status: <strong style="color: <?php echo $index_exists ? 'green' : 'red'; ?>;">
+                    <?php echo $index_exists ? '✅ Created' : '❌ Not Created'; ?>
+                </strong></p>
+                <?php if (!$index_exists): ?>
+                    <button type="button" id="create-fulltext-index-btn" class="button button-primary">
+                        Create Full-Text Index
+                    </button>
+                <?php else: ?>
+                    <p class="description">Full-text index is already available for search.</p>
+                <?php endif; ?>
             </div>
 
             <div class="card" style="margin-top: 20px;">
@@ -292,6 +310,36 @@ class WP_REST_RAG_Endpoints {
                     },
                     complete: function() {
                         $btn.prop('disabled', false).text('Test Hybrid Search');
+                    }
+                });
+            });
+
+            // Create Full-Text Index
+            $('#create-fulltext-index-btn').on('click', function() {
+                var $btn = $(this);
+
+                $btn.prop('disabled', true).text('Creating Index...');
+
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'create_rag_fulltext_index'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showMessage(response.data, 'success');
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            showMessage(response.data || 'Failed to create index.', 'error');
+                            $btn.prop('disabled', false).text('Create Full-Text Index');
+                        }
+                    },
+                    error: function() {
+                        showMessage('An error occurred while creating the index.', 'error');
+                        $btn.prop('disabled', false).text('Create Full-Text Index');
                     }
                 });
             });
@@ -589,10 +637,10 @@ class WP_REST_RAG_Endpoints {
                 post_content,
                 categories,
                 tags,
-                MATCH(post_title, post_content, categories, tags, custom_meta_data)
+                MATCH(post_title, post_content)
                 AGAINST (%s IN NATURAL LANGUAGE MODE) as relevance_score
             FROM " . RAG_TABLE_NAME . "
-            WHERE MATCH(post_title, post_content, categories, tags, custom_meta_data)
+            WHERE MATCH(post_title, post_content)
                 AGAINST (%s IN NATURAL LANGUAGE MODE)
             ORDER BY relevance_score DESC
             LIMIT %d",
@@ -618,6 +666,38 @@ class WP_REST_RAG_Endpoints {
         );
 
         return !empty($index_check);
+    }
+
+    /**
+     * Create full-text index on the RAG table
+     */
+    private function create_fulltext_index() {
+        global $wpdb;
+
+        if ($this->check_fulltext_index()) {
+            return array(
+                'success' => false,
+                'message' => 'Full-text index already exists.'
+            );
+        }
+
+        $fields = array('post_title', 'post_content');
+        $fields_str = implode(', ', $fields);
+
+        $sql = "ALTER TABLE " . RAG_TABLE_NAME . " ADD FULLTEXT INDEX fulltext_search_idx ({$fields_str})";
+        $result = $wpdb->query($sql);
+
+        if ($result === false) {
+            return array(
+                'success' => false,
+                'message' => 'Failed to create full-text index: ' . $wpdb->last_error
+            );
+        }
+
+        return array(
+            'success' => true,
+            'message' => 'Full-text index created successfully.'
+        );
     }
 
     /**
@@ -703,6 +783,23 @@ class WP_REST_RAG_Endpoints {
             wp_send_json_error($response->get_error_message());
         } else {
             wp_send_json_success($response);
+        }
+    }
+
+    /**
+     * AJAX handler for creating full-text index
+     */
+    public function ajax_create_fulltext_index() {
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+        }
+
+        $result = $this->create_fulltext_index();
+
+        if ($result['success']) {
+            wp_send_json_success($result['message']);
+        } else {
+            wp_send_json_error($result['message']);
         }
     }
 

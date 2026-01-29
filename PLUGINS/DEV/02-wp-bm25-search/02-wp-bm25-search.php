@@ -103,7 +103,7 @@ Building RESTful APIs with Python Flask and authentication best practices.";
         }
         
         ?>
-        <div class="wrap">
+        <div class="wrap" style="font-size:1.25rem;line-height:1.5;max-width:1000px;">
             <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
             
             <div style="background: #fff; padding: 20px; margin: 20px 0; border: 1px solid #ccc;">
