@@ -332,7 +332,7 @@ class BM25_Calculation_Plugin {
                     <h3>Parameters</h3>
                     <div class="fg">
                         <label for="bm25-k1">k1 (Term Frequency Saturation): <span class="pv" id="k1-value">1.5</span></label>
-                        <input type="range" id="bm25-k1" min="0" max="3" step="0.1" value="1.5" class="widefat">
+                        <input type="range" id="bm25-k1" min="0.1" max="10" step="0.1" value="1.5" class="widefat">
                         <p class="description">Typical range: 1.2-2.0</p>
                     </div>
                     <div class="fg">

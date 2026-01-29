@@ -57,8 +57,8 @@ function bm25_explainer_page() {
                     <table class="widefat">
                         <thead>
                             <tr>
-                                <th style="background:#ffffff">Document</th>
-                                <th style="background:#ffffff">Why It Ranks High/Low</th>
+                                <th style="background:#ffffff;font-weight:bold;font-size:1.25rem">Document</th>
+                                <th style="background:#ffffff;font-weight:bold;font-size:1.25rem">Why It Ranks High/Low</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -92,9 +92,9 @@ function bm25_explainer_page() {
                     <table class="widefat">
                         <thead>
                             <tr>
-                                <th style="background:#ffffff">>Document</th>
-                                <th style="background:#ffffff">>Times "pizza" appears</th>
-                                <th style="background:#ffffff">>Rank</th>
+                                <th style="background:#ffffff;font-weight:bold;font-size:1.25rem">Document</th>
+                                <th style="background:#ffffff;font-weight:bold;font-size:1.25rem">Times "pizza" appears</th>
+                                <th style="background:#ffffff;font-weight:bold;font-size:1.25rem">Rank</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -572,9 +572,9 @@ FINAL BM25 SCORE = Score("chocolate") + Score("cake")
                 <table class="widefat">
                     <thead>
                         <tr>
-                            <th>k1 Value</th>
-                            <th>Effect</th>
-                            <th>Use Case</th>
+                            <th style="background:#ffffff;font-weight:bold;font-size:1.25rem;">k1 Value</th>
+                            <th style="background:#ffffff;font-weight:bold;font-size:1.25rem;">Effect</th>
+                            <th style="background:#ffffff;font-weight:bold;font-size:1.25rem;">Use Case</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -619,9 +619,9 @@ FINAL BM25 SCORE = Score("chocolate") + Score("cake")
                 <table class="widefat">
                     <thead>
                         <tr>
-                            <th>b Value</th>
-                            <th>Effect</th>
-                            <th>Use Case</th>
+                            <th style="background:#ffffff;font-weight:bold;font-size:1.25rem;">b Value</th>
+                            <th style="background:#ffffff;font-weight:bold;font-size:1.25rem;">Effect</th>
+                            <th style="background:#ffffff;font-weight:bold;font-size:1.25rem;">Use Case</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -695,10 +695,10 @@ FINAL BM25 SCORE = Score("chocolate") + Score("cake")
                 <table class="widefat">
                     <thead>
                         <tr>
-                            <th>Method</th>
-                            <th>Pros</th>
-                            <th>Cons</th>
-                            <th>Best For</th>
+                            <th style="background:#ffffff;font-weight:bold;font-size:1.25rem;">Method</th>
+                            <th style="background:#ffffff;font-weight:bold;font-size:1.25rem;">Pros</th>
+                            <th style="background:#ffffff;font-weight:bold;font-size:1.25rem;">Cons</th>
+                            <th style="background:#ffffff;font-weight:bold;font-size:1.25rem;">Best For</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -958,7 +958,9 @@ FINAL SCORE = Score("machine") + Score("learning")
                 font-size: 1.5rem;
                 line-height: 1.6;
             }
-
+            th {
+            background:#ffffff;
+            }
             .bm25-section {
                 margin: 30px 0;
                 padding: 20px;

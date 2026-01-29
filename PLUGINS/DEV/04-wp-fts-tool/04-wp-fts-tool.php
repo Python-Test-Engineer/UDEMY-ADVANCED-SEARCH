@@ -57,7 +57,7 @@ class FTS_Teaching_Plugin {
             array(
                 'id' => 1,
                 'title' => 'Introduction to Machine Learning',
-                'content' => 'Machine learning is a subset of artificial intelligence. Machine learning algorithms learn from data. Machine learning machine learning machine learning is everywhere today.'
+                'content' => 'Machine learning is a subset of artificial intelligence. Machine learning algorithms learn from data. Machine learning machine learning machine learning is everywhere today. Machine learning (ML) is a subset of artificial intelligence (AI) that enables systems to automatically learn and improve from data, rather than being explicitly programmed for every specific task. By identifying patterns, correlations, and anomalies in vast datasets, ML models make predictions, decisions, and inferences. It is widely used in applications like recommendation engines, chatbots, fraud detection, and self-driving cars. Machine learning (ML) is a field of study in artificial intelligence concerned with the development and study of statistical algorithms that can learn from data and generalize to unseen data, and thus perform tasks without explicit instructions.[1] Within a subdiscipline in machine learning, advances in the field of deep learning have allowed neural networks, a class of statistical algorithms, to surpass many previous machine learning approaches in performance.'
             ),
             array(
                 'id' => 2,
