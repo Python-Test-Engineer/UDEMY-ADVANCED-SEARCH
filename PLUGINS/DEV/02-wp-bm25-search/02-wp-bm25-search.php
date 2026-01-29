@@ -128,7 +128,7 @@ Building RESTful APIs with Python Flask and authentication best practices.";
             <!-- Document Management Section -->
             <div style="background: #f9f9f9; padding: 20px; margin: 20px 0;">
                 <h2>Manage Documents</h2>
-                <p>Enter one document per line. These will be used as your search corpus.</p>
+                <h3>Enter one document per line. These will be used as your search corpus.</h3>
                 
                 <form method="post" action="">
                     <?php wp_nonce_field('bm25_save_docs'); ?>
