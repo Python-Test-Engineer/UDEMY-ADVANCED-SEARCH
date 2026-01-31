@@ -74,7 +74,7 @@ class WP_Signals_Plugin {
 
         wp_enqueue_style(
             'wp-signals-admin',
-            plugin_dir_url( __FILE__ ) . 'assets/styles.css',
+            plugin_dir_url( __FILE__ ) . 'assets/futuristic-styles.css',
             array(),
             '1.0.0'
         );

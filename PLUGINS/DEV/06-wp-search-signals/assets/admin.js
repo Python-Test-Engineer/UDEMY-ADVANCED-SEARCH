@@ -118,12 +118,12 @@
 
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = 'button button-secondary wp-signals-record';
-        button.textContent = 'Record Click';
+        button.className = 'wp-signals-record';
+        button.textContent = ' ✅ USEFUL';
         button.addEventListener('click', () => {
             console.log('[wp-signals] Record Click button pressed for item:', item);
             sendEvent(
-                'event_click',
+                'event_useful',
                 {
                     postId,
                     label: title,
