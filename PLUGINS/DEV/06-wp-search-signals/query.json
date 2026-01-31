@@ -1,32 +1,39 @@
 {
+    "query": "smart",
     "results": [
         {
-            "post_id": 116,
-            "post_title": "ARTIFICIAL INTELLIGENCE in Retail and E-commerce",
-            "relevance_score": 5.792625427246094,
+            "post_id": 108,
+            "post_title": "AI-Powered Personal Assistants",
+            "relevance_score": 3.255774974822998,
             "categories": "Artificial Intelligence",
-            "tags": "Amazon, chatbots, e-commerce, recommendation engines, retail",
-            "content": "Retail businesses leverage AI to personalize shopping experiences and optimize operations. Recommendation engines suggest products based on browsing and purchase history. Chatbots handle customer service inquiries instantly. Demand forecasting optimizes inventory management. Visual search allows finding products through images. Dynamic pricing adjusts costs based on demand and competition. AI transforms both online and physical retail experiences.",
+            "tags": "Alexa, Google Assistant, Siri, smart speakers, voice recognition",
+            "content": "Virtual assistants integrate AI into daily life through smartphones and smart speakers. Voice recognition accuracy has improved dramatically in recent years. Natural language understanding allows conversational interactions. Integration with smart home devices enables hands-free control. Privacy concerns arise from always-listening microphones. Personalization improves through continuous learning about user preferences. Assistants become more capable and helpful over time.",
             "search_method": "fulltext"
         },
         {
-            "post_id": 169,
-            "post_title": "FOAM 2 Memory Pillow Set of 2",
-            "relevance_score": 5.337698936462402,
-            "categories": "Home",
-            "tags": "bedding, bedroom, memory foam, pillows, sleep accessories",
-            "content": "Premium shredded memory foam adjusts to your preferred sleeping position and height. Breathable bamboo cover remains cool throughout the night. Hypoallergenic materials resist dust mites, mold, and allergens. Machine-washable cover removes easily with zipper. Maintains shape and support for years without flattening. CertiPUR-US certified foam meets safety and environmental standards. Suitable for side, back, and stomach sleepers.",
+            "post_id": 155,
+            "post_title": "SMART Wireless Bluetooth Headphones",
+            "relevance_score": 1.627887487411499,
+            "categories": "Electronics",
+            "tags": "bluetooth, headphones, music, noise cancelling, wireless audio",
+            "content": "Premium over-ear headphones with active noise cancellation and 30-hour battery life. Soft memory foam ear cushions provide all-day comfort during extended listening sessions. Foldable design includes protective hard travel case for portability. Built-in microphone enables clear phone calls and voice assistant access. Compatible with all Bluetooth-enabled devices including smartphones and laptops. Quick charge feature provides 5 hours of playback from just 10-minute charge. Available in multiple colors including black, silver, and blue finishes.",
             "search_method": "fulltext"
         },
         {
-            "post_id": 179,
-            "post_title": "FOAM 3 Roller High Density",
-            "relevance_score": 3.5584659576416016,
-            "categories": "Fitness",
-            "tags": "foam roller, massage, muscle recovery, physical therapy, stretching",
-            "content": "Deep tissue massage releases muscle tension and improves flexibility. High-density foam maintains shape through years of regular use. Textured surface increases blood flow to targeted areas. Hollow core design provides firm support without excessive weight. Ideal for pre-workout warmup and post-workout recovery. Includes exercise guide demonstrating proper rolling techniques. Available in 12-inch, 18-inch, and 36-inch lengths.",
+            "post_id": 156,
+            "post_title": "SMART Fitness Watch",
+            "relevance_score": 1.627887487411499,
+            "categories": "Electronics",
+            "tags": "fitness tracker, GPS, health monitor, smartwatch, wearable technology",
+            "content": "Track your health metrics with continuous heart rate monitoring, sleep quality tracking, and accurate step counting. Water-resistant up to 50 meters making it perfect for swimming and water sports. Built-in GPS tracking records running and cycling routes without phone. Receives smartphone notifications including calls, texts, and app alerts. Rechargeable battery lasts up to 7 days on single charge. Interchangeable bands available in multiple colors and materials. Syncs seamlessly with both iOS and Android companion apps.",
             "search_method": "fulltext"
         }
     ],
-    "resultCount": 3
+    "resultCount": 3,
+    "resultIds": [
+        108,
+        155,
+        156
+    ],
+    "query_id": 2
 }
