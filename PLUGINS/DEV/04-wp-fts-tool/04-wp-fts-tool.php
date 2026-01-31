@@ -594,6 +594,7 @@ class FTS_Teaching_Plugin {
         
         .fts-results {
             min-height: 400px;
+            font-size: 1.5rem;
         }
         
         .fts-placeholder {
@@ -615,8 +616,10 @@ class FTS_Teaching_Plugin {
             color: #fff;
             padding: 2px 8px;
             border-radius: 3px;
-            font-size: 12px;
+            font-size: 1.5rem;
             margin-right: 10px;
+            margin-bottom: 6px;
+            padding: 5px;
         }
         
         .fts-result-score {
@@ -625,17 +628,20 @@ class FTS_Teaching_Plugin {
             color: #fff;
             padding: 2px 8px;
             border-radius: 3px;
-            font-size: 12px;
+            font-size: 1.5rem;
+            padding: 5px;
         }
         
         .fts-result-title {
             font-weight: bold;
             margin: 10px 0 5px 0;
+            font-size: 1.5rem;
+            padding-top:10px;
         }
         
         .fts-result-content {
             color: #555;
-            font-size: 13px;
+            font-size: 1.5rem;
             line-height: 1.5;
         }
         
@@ -644,8 +650,9 @@ class FTS_Teaching_Plugin {
             padding: 8px;
             background: #fff;
             border-radius: 3px;
-            font-size: 12px;
-            color: #666;
+            font-size: 1.5rem;
+            color: green;
+            border: 1px solid #46b450;
         }
         
         .fts-documents-section {
