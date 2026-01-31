@@ -28,9 +28,12 @@
         debugContainer,
     });
 
+    let currentQueryId = null;
+
     const clearResults = () => {
         console.log('[wp-signals] Clearing results.');
         resultsContainer.innerHTML = '';
+        currentQueryId = null;
     };
 
     const renderEmptyState = (message) => {
@@ -45,20 +48,63 @@
         debugContainer.prepend(entry);
     };
 
+    const createQuery = async (queryText, resultIds) => {
+        console.log('[wp-signals] Creating query record:', queryText, resultIds);
+        
+        const data = new FormData();
+        data.append('action', 'wp_signals_create_query');
+        data.append('nonce', wpSignalsData.nonce);
+        data.append('query_text', queryText);
+        data.append('result_ids', JSON.stringify(resultIds));
+
+        try {
+            const response = await fetch(wpSignalsData.ajaxUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: data,
+            });
+
+            const result = await response.json();
+            console.log('[wp-signals] Query created:', result);
+
+            if (result.success && result.data.query_id) {
+                currentQueryId = result.data.query_id;
+                addDebugEntry('query_created', {
+                    query_id: currentQueryId,
+                    query_text: queryText,
+                    result_ids: resultIds
+                });
+                return currentQueryId;
+            }
+        } catch (error) {
+            console.log('[wp-signals] Error creating query:', error);
+        }
+
+        return null;
+    };
+
     const sendEvent = (eventName, payload, options = {}) => {
         console.log('[wp-signals] Sending event:', eventName, payload);
-        addDebugEntry(eventName, payload);
+        
+        const eventPayload = {
+            ...payload,
+            query_id: currentQueryId
+        };
+        
+        addDebugEntry(eventName, eventPayload);
 
         const data = new FormData();
         data.append('action', 'wp_signals_log_event');
         data.append('nonce', wpSignalsData.nonce);
         data.append('event_name', eventName);
-        data.append('event_meta_details', JSON.stringify(payload));
-        if (options.query) {
-            data.append('query', options.query);
+        data.append('event_meta_details', JSON.stringify(eventPayload));
+        
+        if (currentQueryId) {
+            data.append('query_id', currentQueryId);
         }
-        if (options.results) {
-            data.append('results', JSON.stringify(options.results));
+        
+        if (options.postId) {
+            data.append('post_id', options.postId);
         }
 
         fetch(wpSignalsData.ajaxUrl, {
@@ -100,6 +146,7 @@
         contentEl.textContent = content || 'No content preview.';
 
         body.append(titleEl, idEl, contentEl);
+        
         let hoverLogged = false;
         body.addEventListener('mouseenter', () => {
             if (hoverLogged) {
@@ -112,21 +159,27 @@
                 {
                     postId,
                     label: title,
+                },
+                {
+                    postId
                 }
             );
         });
 
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = 'wp-signals-record';
-        button.textContent = ' ✅ USEFUL';
+        button.className = 'button button-secondary wp-signals-record';
+        button.textContent = 'Record Click';
         button.addEventListener('click', () => {
             console.log('[wp-signals] Record Click button pressed for item:', item);
             sendEvent(
-                'event_useful',
+                'event_click',
                 {
                     postId,
                     label: title,
+                },
+                {
+                    postId
                 }
             );
         });
@@ -172,23 +225,28 @@
                 return;
             }
 
+            // Extract result IDs
+            const resultIds = trimmedItems
+                .map((item) => item.post_id || item.id)
+                .filter(Boolean)
+                .map(id => parseInt(id, 10));
+
+            // Create query record first
+            await createQuery(query, resultIds);
+
+            // Render results
             trimmedItems.forEach((item) => {
                 resultsContainer.appendChild(createResultCard(item));
             });
 
-            const resultIds = trimmedItems
-                .map((item) => item.post_id || item.id)
-                .filter(Boolean);
-
+            // Log search event with query_id
             sendEvent(
                 'event_search',
                 {
+                    query: query,
                     results: trimmedItems,
                     resultCount: trimmedItems.length,
-                },
-                {
-                    query,
-                    results: resultIds,
+                    resultIds: resultIds
                 }
             );
         } catch (error) {

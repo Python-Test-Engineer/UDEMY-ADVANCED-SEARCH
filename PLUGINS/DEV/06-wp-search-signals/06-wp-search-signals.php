@@ -2,7 +2,7 @@
 /**
  * Plugin Name:  ✅ 06 WP SEARCH SIGNALS
  * Description: Record user actions as signals for machine learning.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Craig West
  */
 
@@ -12,39 +12,61 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class WP_Signals_Plugin {
     const TABLE_SLUG = 'signals';
+    const QUERIES_TABLE_SLUG = 'signals_queries';
     const NONCE_ACTION = 'wp_signals_log_event';
     const AJAX_ACTION = 'wp_signals_log_event';
+    const AJAX_ACTION_CREATE_QUERY = 'wp_signals_create_query';
 
     public function __construct() {
         add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
         add_action( 'wp_ajax_' . self::AJAX_ACTION, array( $this, 'handle_log_event' ) );
+        add_action( 'wp_ajax_' . self::AJAX_ACTION_CREATE_QUERY, array( $this, 'handle_create_query' ) );
     }
 
     public static function activate() {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . self::TABLE_SLUG;
+        $signals_table = $wpdb->prefix . self::TABLE_SLUG;
+        $queries_table = $wpdb->prefix . self::QUERIES_TABLE_SLUG;
         $charset_collate = $wpdb->get_charset_collate();
 
-        $sql = "CREATE TABLE IF NOT EXISTS {$table_name} (
+        // Create queries table
+        $queries_sql = "CREATE TABLE IF NOT EXISTS {$queries_table} (
+            query_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            session_id VARCHAR(128) NOT NULL,
+            user_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            query_text VARCHAR(255) NOT NULL,
+            result_ids LONGTEXT NULL,
+            created_at DATETIME NOT NULL,
+            PRIMARY KEY  (query_id),
+            KEY user_id (user_id),
+            KEY session_id (session_id),
+            KEY created_at (created_at)
+        ) {$charset_collate};";
+
+        // Create signals table with query_id reference
+        $signals_sql = "CREATE TABLE IF NOT EXISTS {$signals_table} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            query_id BIGINT UNSIGNED NULL,
             session_id VARCHAR(128) NOT NULL,
             guid VARCHAR(36) NOT NULL,
             user_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
             event_name VARCHAR(120) NOT NULL,
-            query VARCHAR(255) NULL,
-            results LONGTEXT NULL,
+            post_id BIGINT UNSIGNED NULL,
             event_meta_details LONGTEXT NULL,
             created_at DATETIME NOT NULL,
             PRIMARY KEY  (id),
+            KEY query_id (query_id),
             KEY event_name (event_name),
             KEY user_id (user_id),
-            KEY session_id (session_id)
+            KEY session_id (session_id),
+            KEY post_id (post_id)
         ) {$charset_collate};";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-        dbDelta( $sql );
+        dbDelta( $queries_sql );
+        dbDelta( $signals_sql );
     }
 
     public function register_admin_menu() {
@@ -68,15 +90,15 @@ class WP_Signals_Plugin {
             'wp-signals-admin',
             plugin_dir_url( __FILE__ ) . 'assets/admin.js',
             array(),
-            '1.0.0',
+            '1.1.0',
             true
         );
 
         wp_enqueue_style(
             'wp-signals-admin',
-            plugin_dir_url( __FILE__ ) . 'assets/futuristic-styles.css',
+            plugin_dir_url( __FILE__ ) . 'assets/styles.css',
             array(),
-            '1.0.0'
+            '1.1.0'
         );
 
         wp_localize_script(
@@ -133,6 +155,74 @@ class WP_Signals_Plugin {
         <?php
     }
 
+    public function handle_create_query() {
+        check_ajax_referer( self::NONCE_ACTION, 'nonce' );
+
+        if ( ! is_user_logged_in() ) {
+            wp_send_json_error( array( 'message' => 'User not logged in.' ), 403 );
+        }
+
+        $query_text = '';
+        $result_ids = array();
+
+        if ( isset( $_POST['query_text'] ) ) {
+            $query_text = sanitize_text_field( wp_unslash( $_POST['query_text'] ) );
+        }
+
+        if ( isset( $_POST['result_ids'] ) ) {
+            $raw_results = wp_unslash( $_POST['result_ids'] );
+            if ( is_array( $raw_results ) ) {
+                $result_ids = array_map( 'intval', $raw_results );
+            } elseif ( is_string( $raw_results ) ) {
+                $decoded = json_decode( $raw_results, true );
+                if ( is_array( $decoded ) ) {
+                    $result_ids = array_map( 'intval', $decoded );
+                }
+            }
+        }
+
+        if ( empty( $query_text ) ) {
+            wp_send_json_error( array( 'message' => 'Missing query text.' ), 400 );
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . self::QUERIES_TABLE_SLUG;
+
+        $session_id = '';
+        if ( function_exists( 'wp_get_session_token' ) ) {
+            $session_id = (string) wp_get_session_token();
+        }
+        if ( empty( $session_id ) ) {
+            if ( PHP_SESSION_ACTIVE !== session_status() ) {
+                session_start();
+            }
+            $session_id = (string) session_id();
+        }
+
+        $inserted = $wpdb->insert(
+            $table_name,
+            array(
+                'session_id' => $session_id,
+                'user_id'    => get_current_user_id(),
+                'query_text' => $query_text,
+                'result_ids' => wp_json_encode( $result_ids ),
+                'created_at' => current_time( 'mysql' ),
+            ),
+            array( '%s', '%d', '%s', '%s', '%s' )
+        );
+
+        if ( false === $inserted ) {
+            wp_send_json_error( array( 'message' => 'Database insert failed.' ), 500 );
+        }
+
+        $query_id = $wpdb->insert_id;
+
+        wp_send_json_success( array( 
+            'message' => 'Query logged.',
+            'query_id' => $query_id
+        ) );
+    }
+
     public function handle_log_event() {
         check_ajax_referer( self::NONCE_ACTION, 'nonce' );
 
@@ -142,8 +232,8 @@ class WP_Signals_Plugin {
 
         $event_name = '';
         $event_meta_details = '';
-        $query = '';
-        $results = '';
+        $query_id = null;
+        $post_id = null;
 
         if ( isset( $_POST['event_name'] ) ) {
             $event_name = sanitize_text_field( wp_unslash( $_POST['event_name'] ) );
@@ -153,17 +243,12 @@ class WP_Signals_Plugin {
             $event_meta_details = wp_unslash( $_POST['event_meta_details'] );
         }
 
-        if ( isset( $_POST['query'] ) ) {
-            $query = sanitize_text_field( wp_unslash( $_POST['query'] ) );
+        if ( isset( $_POST['query_id'] ) ) {
+            $query_id = intval( $_POST['query_id'] );
         }
 
-        if ( isset( $_POST['results'] ) ) {
-            $raw_results = wp_unslash( $_POST['results'] );
-            if ( is_array( $raw_results ) ) {
-                $results = wp_json_encode( $raw_results );
-            } else {
-                $results = sanitize_text_field( $raw_results );
-            }
+        if ( isset( $_POST['post_id'] ) ) {
+            $post_id = intval( $_POST['post_id'] );
         }
 
         if ( empty( $event_name ) ) {
@@ -187,16 +272,16 @@ class WP_Signals_Plugin {
         $inserted = $wpdb->insert(
             $table_name,
             array(
+                'query_id'          => $query_id,
                 'session_id'        => $session_id,
                 'guid'              => wp_generate_uuid4(),
                 'user_id'           => get_current_user_id(),
                 'event_name'        => $event_name,
-                'query'             => $query,
-                'results'           => $results,
+                'post_id'           => $post_id,
                 'event_meta_details'=> $event_meta_details,
                 'created_at'        => current_time( 'mysql' ),
             ),
-            array( '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s' )
+            array( '%d', '%s', '%s', '%d', '%s', '%d', '%s', '%s' )
         );
 
         if ( false === $inserted ) {
