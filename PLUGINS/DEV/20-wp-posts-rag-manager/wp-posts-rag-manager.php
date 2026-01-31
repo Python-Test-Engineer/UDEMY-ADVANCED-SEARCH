@@ -1181,20 +1181,22 @@ class Posts_RAG_Manager {
                 <p class="submit">
                     <button type="button" id="compare-btn" class="button button-primary">Compare Both Methods</button>
                 </p>
-                
-                <div id="compare-results" style="margin-top: 20px; display: none;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div>
-                            <h3>Full-Text Search Results</h3>
-                            <div style="background: #f5f5f5; padding: 15px; border-radius: 4px; max-height: 400px; overflow-y: auto;">
-                                <pre id="compare-fts-json" style="white-space: pre-wrap; word-wrap: break-word; font-size: 12px;"></pre>
-                            </div>
+            </div>
+
+            <!-- Comparison Results (Full Width) -->
+            <div id="compare-results" class="card compare-results" style="margin-top: 20px; display: none;">
+                <h2>Comparison Results</h2>
+                <div class="compare-results-grid">
+                    <div>
+                        <h3>Full-Text Search Results</h3>
+                        <div class="compare-results-panel">
+                            <pre id="compare-fts-json" class="compare-results-json"></pre>
                         </div>
-                        <div>
-                            <h3>Vector Search Results</h3>
-                            <div style="background: #f5f5f5; padding: 15px; border-radius: 4px; max-height: 400px; overflow-y: auto;">
-                                <pre id="compare-vector-json" style="white-space: pre-wrap; word-wrap: break-word; font-size: 12px;"></pre>
-                            </div>
+                    </div>
+                    <div>
+                        <h3>Vector Search Results</h3>
+                        <div class="compare-results-panel">
+                            <pre id="compare-vector-json" class="compare-results-json"></pre>
                         </div>
                     </div>
                 </div>
@@ -1210,6 +1212,32 @@ class Posts_RAG_Manager {
         }
         .card h2 {
             margin-top: 0;
+        }
+        .compare-results {
+            max-width: none;
+            width: 100%;
+        }
+        .compare-results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+        .compare-results-panel {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .compare-results-json {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 12px;
+        }
+        @media (max-width: 960px) {
+            .compare-results-grid {
+                grid-template-columns: 1fr;
+            }
         }
         </style>
         
