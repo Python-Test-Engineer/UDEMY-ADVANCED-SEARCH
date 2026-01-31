@@ -1,0 +1,32 @@
+{
+    "results": [
+        {
+            "post_id": 116,
+            "post_title": "ARTIFICIAL INTELLIGENCE in Retail and E-commerce",
+            "relevance_score": 5.792625427246094,
+            "categories": "Artificial Intelligence",
+            "tags": "Amazon, chatbots, e-commerce, recommendation engines, retail",
+            "content": "Retail businesses leverage AI to personalize shopping experiences and optimize operations. Recommendation engines suggest products based on browsing and purchase history. Chatbots handle customer service inquiries instantly. Demand forecasting optimizes inventory management. Visual search allows finding products through images. Dynamic pricing adjusts costs based on demand and competition. AI transforms both online and physical retail experiences.",
+            "search_method": "fulltext"
+        },
+        {
+            "post_id": 169,
+            "post_title": "FOAM 2 Memory Pillow Set of 2",
+            "relevance_score": 5.337698936462402,
+            "categories": "Home",
+            "tags": "bedding, bedroom, memory foam, pillows, sleep accessories",
+            "content": "Premium shredded memory foam adjusts to your preferred sleeping position and height. Breathable bamboo cover remains cool throughout the night. Hypoallergenic materials resist dust mites, mold, and allergens. Machine-washable cover removes easily with zipper. Maintains shape and support for years without flattening. CertiPUR-US certified foam meets safety and environmental standards. Suitable for side, back, and stomach sleepers.",
+            "search_method": "fulltext"
+        },
+        {
+            "post_id": 179,
+            "post_title": "FOAM 3 Roller High Density",
+            "relevance_score": 3.5584659576416016,
+            "categories": "Fitness",
+            "tags": "foam roller, massage, muscle recovery, physical therapy, stretching",
+            "content": "Deep tissue massage releases muscle tension and improves flexibility. High-density foam maintains shape through years of regular use. Textured surface increases blood flow to targeted areas. Hollow core design provides firm support without excessive weight. Ideal for pre-workout warmup and post-workout recovery. Includes exercise guide demonstrating proper rolling techniques. Available in 12-inch, 18-inch, and 36-inch lengths.",
+            "search_method": "fulltext"
+        }
+    ],
+    "resultCount": 3
+}
