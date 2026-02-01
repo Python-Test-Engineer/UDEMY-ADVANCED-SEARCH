@@ -1,546 +1,329 @@
-<<<<<<< HEAD
-# WP Signals Plugin - Futuristic Theme Installation
-
-## Files Included
-
-1. **06-wp-search-signals.php** - Main plugin file (updated to use new CSS)
-2. **futuristic-styles.css** - Futuristic cyberpunk-themed stylesheet
-3. **admin.js** - Admin JavaScript (unchanged)
-
-## Installation Instructions
-
-### Step 1: Update Your Plugin Files
-
-1. Navigate to your WordPress plugin directory:
-   ```
-   wp-content/plugins/wp-search-signals/
-   ```
-
-2. Replace the main plugin file:
-   - Backup your existing `06-wp-search-signals.php`
-   - Replace with the new `06-wp-search-signals.php`
-
-### Step 2: Add the Assets
-
-1. Create an `assets` folder in your plugin directory if it doesn't exist:
-   ```
-   wp-content/plugins/wp-search-signals/assets/
-   ```
-
-2. Add the CSS file:
-   - Copy `futuristic-styles.css` to the `assets` folder
-   - The file should be at: `assets/futuristic-styles.css`
-
-3. Add the JavaScript file:
-   - Copy `admin.js` to the `assets` folder
-   - The file should be at: `assets/admin.js`
-
-### Step 3: Clear Cache
-
-1. Clear your WordPress cache (if using a caching plugin)
-2. Do a hard refresh in your browser (Ctrl+Shift+R or Cmd+Shift+R)
-
-## File Structure
-
-Your plugin directory should look like this:
-
-```
-wp-search-signals/
-├── 06-wp-search-signals.php
-└── assets/
-    ├── futuristic-styles.css
-    └── admin.js
-```
-
-## Features of the Futuristic Theme
-
-✨ **Cyberpunk Design**
-- Dark background with neon cyan and green accents
-- Glowing text effects and shadows
-- Animated gradient borders
-
-🎯 **Scoped Styling**
-- All CSS is scoped to `.toplevel_page_wp-signals`
-- Won't interfere with other WordPress admin pages
-
-🎨 **Interactive Effects**
-- Hover animations on result cards
-- Button ripple effects
-- Smooth transitions
-- Loading states
-
-📱 **Responsive**
-- Works on all screen sizes
-- Mobile-friendly interface
-
-## Troubleshooting
-
-**Styles not showing?**
-1. Check that files are in the correct location
-2. Clear browser cache (Ctrl+Shift+R)
-3. Check browser console for 404 errors
-4. Verify file permissions (should be readable)
-
-**Old styles still showing?**
-1. Make sure you're using the updated PHP file
-2. Clear WordPress object cache
-3. Hard refresh your browser
-
-## Support
-
-If you encounter any issues, check:
-- File paths are correct
-- Files have proper permissions
-- No PHP errors in WordPress debug log
-=======
 # WP Search Signals Plugin
-
-A proof-of-concept WordPress plugin for capturing user interaction signals to enhance AI-powered search through machine learning.
 
 ## Overview
 
-WP Search Signals records user behavior patterns during search interactions, creating a feedback loop that helps train and improve search relevance. By tracking what users click, hover over, and engage with, this plugin builds a dataset that reveals which search results are truly valuable to users—not just algorithmically relevant.
+WP Search Signals is a WordPress plugin designed to track and record user interactions with search results for machine learning purposes. It captures user behavior patterns—such as searches, result views, hovers, and clicks—to create training data that can be used to improve search relevance and ranking algorithms.
 
-## What Problem Does This Solve?
+## What It Does
 
-Traditional search algorithms rank results based on keyword matching, content analysis, and link structures. However, they often miss the mark on what users actually find useful. This plugin bridges that gap by:
+### User Interaction Tracking
 
-- **Capturing implicit feedback**: Recording what users actually click versus what they skip
-- **Building training data**: Creating labeled datasets for machine learning models
-- **Enabling personalization**: Tracking session-based patterns to understand user intent
-- **Measuring search quality**: Providing metrics on result effectiveness
+The plugin records three types of user signals:
 
-## Architecture
+1. **Search Events** (`event_search`)
+   - Triggered when a user performs a search query
+   - Captures the search query text, returned results, and result count
+   - Associates all returned post IDs with the query
+
+2. **Hover Events** (`event_hover`)
+   - Triggered when a user hovers over a search result card
+   - Records which specific result caught the user's attention
+   - Only logged once per result to avoid duplicate data
+
+3. **Click Events** (`event_click`)
+   - Triggered when a user explicitly clicks "Record Click" on a result
+   - Indicates strong user interest in a particular result
+   - Useful for identifying highly relevant content
+
+### Machine Learning Application
+
+This data creates a feedback loop for search improvement:
+
+- **Implicit Signals**: Hover events show which results attract attention
+- **Explicit Signals**: Click events demonstrate clear user intent and relevance
+- **Query Context**: Each signal is linked to the original search query
+- **Session Tracking**: User sessions are maintained to understand behavior patterns
+
+The collected data can be used to:
+- Train ranking models based on actual user preferences
+- Identify which search results users find most relevant
+- Detect patterns in user behavior for specific query types
+- A/B test search algorithm improvements
+
+## Technical Architecture
 
 ### Database Schema
 
-The plugin creates a `wp_signals` table with the following structure:
+The plugin creates two custom database tables:
+
+#### 1. Queries Table (`wp_signals_queries`)
+
+Stores each unique search query:
 
 ```sql
-CREATE TABLE wp_signals (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    session_id VARCHAR(128) NOT NULL,
-    guid VARCHAR(36) NOT NULL,
-    user_id BIGINT UNSIGNED DEFAULT 0,
-    event_name VARCHAR(120) NOT NULL,
-    query VARCHAR(255) NULL,
-    results LONGTEXT NULL,
-    event_meta_details LONGTEXT NULL,
-    created_at DATETIME NOT NULL,
-    KEY event_name (event_name),
-    KEY user_id (user_id),
-    KEY session_id (session_id)
-);
+query_id         BIGINT      Auto-incrementing primary key
+session_id       VARCHAR     User session identifier
+user_id          BIGINT      WordPress user ID
+query_text       VARCHAR     The actual search query
+result_ids       LONGTEXT    JSON array of returned post IDs
+created_at       DATETIME    Timestamp of the query
 ```
 
-**Key Fields:**
-- `session_id`: Groups events by user session for behavioral analysis
-- `guid`: Unique identifier for each event
-- `event_name`: Type of interaction (search, click, hover)
-- `query`: The search query that generated results
-- `results`: JSON array of result IDs shown to the user
-- `event_meta_details`: Additional context (position, timestamp, metadata)
+#### 2. Signals Table (`wp_signals`)
 
-### Component Structure
+Stores individual user interaction events:
 
-```
-06-wp-search-signals/
-├── 06-wp-search-signals.php    # Main plugin file
-└── assets/
-    ├── admin.js                 # Frontend event tracking
-    └── styles.css               # UI styling
+```sql
+id                  BIGINT      Auto-incrementing primary key
+query_id            BIGINT      Foreign key to queries table
+session_id          VARCHAR     User session identifier
+guid                VARCHAR     Unique event identifier
+user_id             BIGINT      WordPress user ID
+event_name          VARCHAR     Type of event (search/hover/click)
+post_id             BIGINT      Specific post involved (for hover/click)
+event_meta_details  LONGTEXT    JSON metadata about the event
+created_at          DATETIME    Timestamp of the event
 ```
 
-### Data Flow
+### PHP Backend (`06-wp-search-signals.php`)
 
-```
-User Action → JavaScript Event → AJAX Request → PHP Handler → Database
-     ↓
-Search Query → Hybrid Search API → Results Display → User Interaction
-```
+#### Core Class: `WP_Signals_Plugin`
 
-## How It Works
+**Initialization & Hooks**:
+- Registers admin menu page
+- Enqueues JavaScript and CSS assets
+- Sets up AJAX endpoints for event logging
 
-### 1. Search Event (`event_search`)
+**Key Methods**:
 
-When a user performs a search:
+1. **`activate()`** (Static)
+   - Creates database tables on plugin activation
+   - Uses `dbDelta()` for safe schema management
+   - Establishes indexes for query performance
+
+2. **`register_admin_menu()`**
+   - Adds admin interface at position 3.6
+   - Requires `manage_options` capability
+
+3. **`enqueue_admin_assets()`**
+   - Loads admin.js and styles.css only on plugin page
+   - Passes configuration to JavaScript via `wp_localize_script()`
+   - Includes AJAX URL, security nonce, and search endpoint
+
+4. **`handle_create_query()`**
+   - AJAX handler for creating new query records
+   - Validates user authentication and nonce
+   - Sanitizes input and stores query with result IDs
+   - Returns the new `query_id` to JavaScript
+
+5. **`handle_log_event()`**
+   - AJAX handler for logging individual signals
+   - Associates events with queries via `query_id`
+   - Generates unique GUID for each event
+   - Stores event metadata as JSON
+
+**Security Features**:
+- Nonce verification on all AJAX requests
+- User authentication checks
+- Input sanitization with `sanitize_text_field()`
+- Capability checks for admin access
+
+### JavaScript Frontend (`admin.js`)
+
+#### Architecture Pattern
+
+Uses an IIFE (Immediately Invoked Function Expression) to avoid global namespace pollution.
+
+#### Key Components
+
+1. **DOM Management**
+   - Query input field (`#ws_query`)
+   - Run query button (`#ws_query_run`)
+   - Results container (`#wp-signals-results`)
+   - Debug output container (`#wp-signals-debug`)
+
+2. **Query Workflow**
+
 ```javascript
-sendEvent('event_search', {
-    results: [postId1, postId2, postId3],
-    resultCount: 3
-}, {
-    query: "FOAM products",
-    results: [123, 456, 789]
-});
+User enters query → fetchResults() → API call to hybrid search endpoint
+                                  ↓
+                          createQuery() creates database record
+                                  ↓
+                          Returns query_id for session
+                                  ↓
+                          Renders result cards
+                                  ↓
+                          Logs search event with query_id
 ```
 
-This records:
-- The search query
-- Which results were returned
-- The order they appeared in
-- Timestamp of the search
+3. **Event Tracking Functions**
 
-### 2. Hover Event (`event_hover`)
+**`createQuery(queryText, resultIds)`**:
+- Makes AJAX call to create query record in database
+- Stores returned `query_id` in `currentQueryId` variable
+- This ID links all subsequent events to this search session
 
-When a user hovers over a result (fired once per result):
+**`sendEvent(eventName, payload, options)`**:
+- Sends event data to PHP backend
+- Automatically includes current `query_id`
+- Logs to debug container for transparency
+- Non-blocking (doesn't wait for response)
+
+**`createResultCard(item)`**:
+- Dynamically generates HTML for each search result
+- Attaches hover event listener (fires once per card)
+- Adds click button for explicit signal recording
+- Extracts post ID from various possible field names
+
+4. **State Management**
+
 ```javascript
-sendEvent('event_hover', {
-    postId: 123,
-    label: "Product Title"
-});
+let currentQueryId = null;  // Tracks active query session
 ```
 
-This indicates the user is **considering** this result, providing a weak positive signal.
+All events in a session reference this ID, creating a complete interaction history.
 
-### 3. Click Event (`event_click`)
+5. **Search Integration**
 
-When a user clicks "Record Click" (or in production, clicks through to a result):
-```javascript
-sendEvent('event_click', {
-    postId: 123,
-    label: "Product Title"
-});
+- Calls REST API endpoint: `/wp-json/search/v1/hybrid-search`
+- Passes query and limit parameters
+- Handles multiple response formats (array or object with nested results)
+- Limits display to first 3 results
+
+#### Event Flow Example
+
+```
+1. User searches "FOAM products"
+2. createQuery() → Returns query_id: 42
+3. currentQueryId = 42
+4. Render 3 result cards
+5. Log event_search with query_id: 42
+6. User hovers over result #123
+7. Log event_hover with query_id: 42, post_id: 123
+8. User clicks "Record Click" on result #456
+9. Log event_click with query_id: 42, post_id: 456
 ```
 
-This is a **strong positive signal** that the result was relevant to the user's query.
+All these events are now linked together for analysis.
 
-### Event Processing
+## Data Collection Strategy
 
-All events flow through the `handle_log_event()` method:
+### Query-Centric Model
+
+The two-table design creates a hierarchical relationship:
+
+```
+Query (1) → Many Events (*)
+```
+
+Benefits:
+- Efficiently groups all interactions for a single search
+- Enables analysis of entire user journeys
+- Reduces data duplication (query text stored once)
+- Makes it easy to calculate metrics like click-through rate per query
+
+### Session Tracking
+
+Sessions are tracked using WordPress session tokens or PHP session IDs:
 
 ```php
-public function handle_log_event() {
-    // Verify nonce and authentication
-    check_ajax_referer(self::NONCE_ACTION, 'nonce');
-    
-    // Extract and sanitize data
-    $event_name = sanitize_text_field($_POST['event_name']);
-    $query = sanitize_text_field($_POST['query']);
-    $results = wp_json_encode($_POST['results']);
-    
-    // Insert into database
-    $wpdb->insert($table_name, [
-        'session_id' => wp_get_session_token(),
-        'guid' => wp_generate_uuid4(),
-        'user_id' => get_current_user_id(),
-        'event_name' => $event_name,
-        'query' => $query,
-        'results' => $results,
-        'event_meta_details' => $event_meta_details,
-        'created_at' => current_time('mysql')
-    ]);
-}
+$session_id = wp_get_session_token() ?? session_id();
 ```
 
-## User Signals in AI-Powered Search
+This allows analysis of:
+- Multi-query sessions
+- User behavior patterns over time
+- Cross-query learning patterns
 
-### The Signal Types
+## Use Cases for Machine Learning
 
-**Explicit Signals:**
-- Clicks (strong positive)
-- Bookmarks/saves (very strong positive)
-- Shares (strong positive)
-- Time on page (moderate positive)
+### 1. Learning to Rank (LTR)
 
-**Implicit Signals:**
-- Hover duration (weak positive)
-- Scroll depth (weak positive)
-- Skips/ignores (negative)
-- Immediate back navigation (strong negative)
+Train models using features like:
+- Position of clicked results in the original ranking
+- Time to first click after search
+- Number of hovers before click
+- Query-document relevance based on interaction
 
-### From Signals to Intelligence
+### 2. Query Understanding
 
-#### 1. **Learning to Rank (LTR)**
+Analyze which results users engage with to:
+- Identify user intent behind ambiguous queries
+- Cluster similar queries based on interaction patterns
+- Suggest query refinements
 
-Signals create training data for machine learning models:
+### 3. A/B Testing
 
-```python
-# Example training data structure
-{
-    "query": "FOAM products",
-    "results": [
-        {"post_id": 123, "position": 1, "clicked": true, "hovered": true},
-        {"post_id": 456, "position": 2, "clicked": false, "hovered": true},
-        {"post_id": 789, "position": 3, "clicked": false, "hovered": false}
-    ]
-}
-```
+Compare search algorithms by:
+- Measuring engagement rates per algorithm variant
+- Tracking which variant produces more clicked results
+- Calculating metrics like Mean Reciprocal Rank (MRR)
 
-The model learns that for this query, post 123 is most relevant because it was both hovered and clicked, while post 789 was ignored entirely.
+### 4. Relevance Feedback
 
-#### 2. **Click-Through Rate (CTR) Optimization**
+Use implicit feedback to:
+- Boost frequently clicked results for specific queries
+- Demote results with high impressions but no engagement
+- Personalize results based on user history
 
-Track which results get clicked at which positions:
+## Installation & Usage
 
-```
-Query: "FOAM products"
-Position 1: CTR 45% → Highly relevant
-Position 2: CTR 12% → Moderately relevant
-Position 3: CTR 3%  → Low relevance
-```
-
-Results with high CTR at lower positions should be promoted.
-
-#### 3. **Session-Based Learning**
-
-Analyze patterns within user sessions:
-
-```
-Session ABC123:
-- Search "foam roller"
-- Hover posts [1, 2, 5]
-- Click post 5
-- Search "foam roller exercises" (refinement)
-- Click post 12
-
-Insight: Post 5 is relevant for product searches,
-         Post 12 is relevant for usage instructions
-```
-
-#### 4. **Personalization Vectors**
-
-Build user preference profiles:
-
-```json
-{
-    "user_id": 42,
-    "preferences": {
-        "product_focus": 0.8,
-        "tutorial_focus": 0.3,
-        "price_sensitivity": 0.6
-    },
-    "click_history": [
-        {"category": "products", "weight": 0.7},
-        {"category": "reviews", "weight": 0.2}
-    ]
-}
-```
-
-### Real-World Applications
-
-**1. Query Understanding**
-```
-Query: "apple"
-Clicked results: iPhone, MacBook, iPad
-Signal: User means Apple Inc., not the fruit
-```
-
-**2. Result Diversity**
-```
-Query: "python"
-Clicks distributed across:
-- Programming tutorials (40%)
-- Snake information (30%)
-- Monty Python content (30%)
-Signal: Need diverse results for ambiguous queries
-```
-
-**3. Temporal Relevance**
-```
-Query: "covid vaccine"
-Clicks over time:
-- 2020: Research articles
-- 2021: Availability locations
-- 2022: Booster information
-Signal: Search intent shifts over time
-```
-
-### Machine Learning Pipeline
-
-```
-Raw Signals → Feature Engineering → Model Training → Deployment
-     ↓               ↓                    ↓              ↓
-  Database    Click patterns      Ranking model    Live search
-              Position bias       Relevance scores  Re-ranking
-              Time features       A/B testing       Monitoring
-```
-
-## Integration with Hybrid Search
-
-This plugin is designed to work with a hybrid search endpoint (`/search/v1/hybrid-search`) that combines:
-
-- **Semantic search**: Vector embeddings for meaning
-- **Keyword search**: Traditional BM25/TF-IDF
-- **Signal boosting**: User interaction weights
-
-```javascript
-// Results are fetched and displayed
-const response = await fetch(`${hybridSearchUrl}?query=${query}&limit=3`);
-const results = await response.json();
-
-// User interactions are recorded
-results.forEach(result => {
-    // Track hover, click, dwell time, etc.
-});
-```
-
-## Installation
-
-1. Upload the plugin folder to `/wp-content/plugins/`
-2. Activate the plugin through the WordPress admin
+1. Upload plugin files to `/wp-content/plugins/wp-search-signals/`
+2. Activate the plugin through WordPress admin
 3. Navigate to "06 WP SIGNALS" in the admin menu
-4. The database table is created automatically on activation
+4. Enter search queries to generate training data
+5. Export data from database tables for ML model training
 
-## Configuration
+## Data Export for Analysis
 
-The plugin expects a REST API endpoint at:
-```
-/wp-json/search/v1/hybrid-search
-```
+Access the collected data via SQL:
 
-You can modify the endpoint in the PHP file:
-```php
-'hybridSearchUrl' => rest_url('search/v1/hybrid-search')
-```
+```sql
+-- Get all queries with their events
+SELECT 
+    q.query_text,
+    q.result_ids,
+    s.event_name,
+    s.post_id,
+    s.event_meta_details,
+    s.created_at
+FROM wp_signals_queries q
+LEFT JOIN wp_signals s ON q.query_id = s.query_id
+ORDER BY q.created_at DESC, s.created_at ASC;
 
-## Usage for Developers
-
-### Tracking Custom Events
-
-```javascript
-// Access the global sendEvent function
-sendEvent('custom_event_name', {
-    customField: 'value',
-    anotherField: 123
-}, {
-    query: 'optional search query',
-    results: [1, 2, 3] // optional result IDs
-});
-```
-
-### Querying Signal Data
-
-```php
-global $wpdb;
-$table_name = $wpdb->prefix . 'signals';
-
-// Get all clicks for a specific query
-$clicks = $wpdb->get_results($wpdb->prepare(
-    "SELECT * FROM {$table_name} 
-     WHERE event_name = 'event_click' 
-     AND query = %s 
-     ORDER BY created_at DESC",
-    'foam products'
-));
-
-// Get CTR by position
-$ctr_data = $wpdb->get_results(
-    "SELECT 
-        query,
-        JSON_EXTRACT(event_meta_details, '$.postId') as post_id,
-        COUNT(*) as impressions,
-        SUM(CASE WHEN event_name = 'event_click' THEN 1 ELSE 0 END) as clicks
-     FROM {$table_name}
-     WHERE event_name IN ('event_search', 'event_click')
-     GROUP BY query, post_id"
-);
+-- Calculate click-through rate per query
+SELECT 
+    query_text,
+    COUNT(DISTINCT CASE WHEN event_name = 'event_click' THEN query_id END) as clicks,
+    COUNT(DISTINCT query_id) as total_queries,
+    (COUNT(DISTINCT CASE WHEN event_name = 'event_click' THEN query_id END) * 100.0 / 
+     COUNT(DISTINCT query_id)) as ctr
+FROM wp_signals_queries q
+LEFT JOIN wp_signals s USING(query_id)
+GROUP BY query_text;
 ```
 
-### Exporting Training Data
+## Developer Notes
 
-```php
-// Export signals as training data for ML models
-function export_training_data($query = null) {
-    global $wpdb;
-    $table_name = $wpdb->prefix . 'signals';
-    
-    $where = $query ? $wpdb->prepare("WHERE query = %s", $query) : "";
-    
-    $sessions = $wpdb->get_results(
-        "SELECT 
-            session_id,
-            query,
-            results,
-            GROUP_CONCAT(event_name) as events,
-            created_at
-         FROM {$table_name}
-         {$where}
-         GROUP BY session_id, query
-         ORDER BY created_at DESC"
-    );
-    
-    return $sessions;
-}
-```
+### Extending the Plugin
 
-## Privacy Considerations
+To add new event types:
 
-This plugin records user behavior, so ensure compliance with:
+1. Create a new event name constant
+2. Add JavaScript event listener in `admin.js`
+3. Call `sendEvent()` with appropriate payload
+4. No backend changes needed—events are stored generically
 
-- **GDPR**: Obtain consent for tracking, allow data deletion
-- **CCPA**: Provide opt-out mechanisms
-- **User transparency**: Inform users about data collection
+### Security Considerations
 
-Consider implementing:
-```php
-// Add user consent check
-if (!user_has_consented_to_tracking()) {
-    return; // Don't record signal
-}
+- All AJAX requests use WordPress nonces
+- User authentication required for all operations
+- Input sanitization on all user-provided data
+- SQL injection protection via `$wpdb->insert()` prepared statements
 
-// Anonymize after retention period
-$wpdb->query("UPDATE {$table_name} 
-              SET user_id = 0, session_id = 'anonymized' 
-              WHERE created_at < DATE_SUB(NOW(), INTERVAL 90 DAY)");
-```
+### Performance Optimization
 
-## Future Enhancements
+The plugin includes database indexes on:
+- `query_id` for fast joins
+- `event_name` for filtering by event type
+- `user_id` and `session_id` for user-specific queries
+- `created_at` for time-based analysis
 
-### Potential Features:
-- **A/B Testing Framework**: Test different ranking algorithms
-- **Real-time Feedback**: Adjust search results within the same session
-- **Multi-armed Bandit**: Balance exploration vs. exploitation
-- **Negative Signals**: Track skipped results and quick backs
-- **Dwell Time**: Measure how long users stay on clicked results
-- **Export API**: Provide data to external ML platforms
-- **Dashboard Analytics**: Visualize signal patterns and trends
+## Version History
 
-### Advanced Signals:
-```javascript
-// Track scroll depth
-window.addEventListener('scroll', debounce(() => {
-    sendEvent('event_scroll', {
-        depth: getScrollPercentage(),
-        postId: getCurrentPostId()
-    });
-}, 500));
-
-// Track copy/paste (high engagement)
-document.addEventListener('copy', (e) => {
-    sendEvent('event_copy', {
-        text: window.getSelection().toString().substring(0, 100)
-    });
-});
-
-// Track exit intent
-document.addEventListener('mouseleave', (e) => {
-    if (e.clientY < 0) {
-        sendEvent('event_exit_intent', {
-            timeOnPage: Date.now() - pageLoadTime
-        });
-    }
-});
-```
-
-## Contributing
-
-This is a proof-of-concept. Contributions welcome:
-
-1. Add more signal types
-2. Improve privacy controls
-3. Add analytics dashboard
-4. Create ML training pipeline integration
-5. Add A/B testing framework
+- **1.1.0**: Added query-centric model with separate queries table
+- **1.0.0**: Initial release with basic event logging
 
 ## License
 
-[Your chosen license]
-
-## Author
-
-Craig West
-
----
-
-**Remember**: User signals are only as valuable as the actions you take with them. Collect data, analyze patterns, train models, and continuously improve your search experience based on real user behavior.
->>>>>>> 38677e464e0714818ffe70d61ceabece9e438061
+This plugin is provided as-is for machine learning research and search improvement purposes.
