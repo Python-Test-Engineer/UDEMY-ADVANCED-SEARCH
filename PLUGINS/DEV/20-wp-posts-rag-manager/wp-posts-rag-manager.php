@@ -939,7 +939,7 @@ class Posts_RAG_Manager {
         error_log("   - last_embedded IS NULL: {$null_last_embedded}");
         error_log("   - embedding IS NULL: {$null_embedding}");
         error_log("   - embedding = '': {$empty_embedding}");
-        $query = "SELECT id, post_id, post_title, post_content FROM {$this->table_name} WHERE last_embedded IS NULL OR embedding IS NULL OR embedding = ''";
+        $query = "SELECT id, post_id, post_title, post_content FROM {$this->table_name} WHERE embedding IS NULL OR embedding = ''";
         error_log("🔍 Embeddings query: " . $query);
         
         $posts = $wpdb->get_results($query);

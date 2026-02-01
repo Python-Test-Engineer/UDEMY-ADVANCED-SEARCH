@@ -50,7 +50,7 @@
 
     const createQuery = async (queryText, resultIds) => {
         console.log('[wp-signals] Creating query record:', queryText, resultIds);
-        
+
         const data = new FormData();
         data.append('action', 'wp_signals_create_query');
         data.append('nonce', wpSignalsData.nonce);
@@ -85,12 +85,12 @@
 
     const sendEvent = (eventName, payload, options = {}) => {
         console.log('[wp-signals] Sending event:', eventName, payload);
-        
+
         const eventPayload = {
             ...payload,
             query_id: currentQueryId
         };
-        
+
         addDebugEntry(eventName, eventPayload);
 
         const data = new FormData();
@@ -98,11 +98,11 @@
         data.append('nonce', wpSignalsData.nonce);
         data.append('event_name', eventName);
         data.append('event_meta_details', JSON.stringify(eventPayload));
-        
+
         if (currentQueryId) {
             data.append('query_id', currentQueryId);
         }
-        
+
         if (options.postId) {
             data.append('post_id', options.postId);
         }
@@ -146,7 +146,7 @@
         contentEl.textContent = content || 'No content preview.';
 
         body.append(titleEl, idEl, contentEl);
-        
+
         let hoverLogged = false;
         body.addEventListener('mouseenter', () => {
             if (hoverLogged) {
@@ -169,11 +169,11 @@
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'button button-secondary wp-signals-record';
-        button.textContent = 'Record Click';
+        button.textContent = '✓ Mark as Useful';
         button.addEventListener('click', () => {
             console.log('[wp-signals] Record Click button pressed for item:', item);
             sendEvent(
-                'event_click',
+                'event_useful',
                 {
                     postId,
                     label: title,
