@@ -1,7 +1,9 @@
-# 🔍 **Understanding BM25 Scores: Why Negative Numbers Are Totally Normal**  
-*A lecture for developers learning modern search ranking*
+# Understanding BM25 Scores: 
 
-## 🎬 **Opening Intuition: What Is BM25 Trying to Do?**
+Why Negative Numbers Are Totally Normal
+
+
+## Opening Intuition: What Is BM25 Trying to Do?
 
 BM25 is a **relevance scoring function**. Its job is simple:
 
@@ -17,11 +19,8 @@ Think of BM25 like a judge in a talent show:
 
 This is why **negative scores are not a problem** — they’re just part of the math.
 
----
 
-# 🔢 **Understanding BM25 Scores**
-
-## ⭐ Negative Scores Are Normal
+## Negative Scores Are Normal
 
 BM25 scores can be **positive, negative, or zero**.  
 The only rule that matters:
@@ -30,31 +29,27 @@ The only rule that matters:
 
 This is the part that confuses beginners, so emphasize it early and often.
 
----
+## Interpreting BM25 Scores
 
-# 📊 **Interpreting BM25 Scores**
-
-### **Positive Scores**  
+### Positive Scores
 These happen when the query terms are **rare** across your collection.
 
 - Rare terms → high IDF → positive BM25  
 - Example: Searching for “quantum” in a blog collection
 
-### **Negative Scores**  
+### Negative Scores  
 These happen when the query terms are **very common**.
 
 - Common terms → negative IDF → negative BM25  
 - Example: Searching for “the” or “programming”
 
-### **Zero Scores**  
+### Zero Scores 
 These happen when:
 
 - The document contains **none** of the query terms  
 - Or the terms are so common that the math cancels out
 
----
-
-# 🧮 **Why Negative Scores Happen (The Math Intuition)**
+## Why Negative Scores Happen (The Math Intuition)
 
 BM25 uses the IDF formula:
 
@@ -75,9 +70,9 @@ If a term appears in **more than half** of your documents, the fraction becomes 
 
 This is expected and correct.
 
----
+## Mental Model: 
 
-# 🧠 **Mental Model: Think of IDF Like “Uniqueness Points”**
+Think of IDF Like “Uniqueness Points”
 
 - Rare terms earn **bonus points**  
 - Common terms earn **penalty points**  
@@ -85,9 +80,7 @@ This is expected and correct.
 
 If all your query terms are common, you get a **negative total**, but the ranking still works.
 
----
-
-# 📈 **Example Breakdown**
+## Example Breakdown
 
 | Document | "the" | "programming" | "language" | BM25 |
 |---------|-------|----------------|------------|------|
@@ -103,29 +96,26 @@ Ranking:
 
 Even though Doc 2 has a negative score, it’s still the **best match**.
 
----
 
-# 🧭 **When You’ll See Each Score Type**
+## When You’ll See Each Score Type
 
-### **Positive Scores**
+### Positive Scores
 - Rare terms  
 - Technical vocabulary  
 - Small document sets  
 
-### **Negative Scores**
+### Negative Scores
 - Common words  
 - Terms appearing in most documents  
 - Broad/general vocabulary  
 
-### **Zero Scores**
+### Zero Scores
 - No matching terms  
 - Completely unrelated content  
 
----
+## Practical Experiments 
 
-# 🛠️ **Practical Experiments (Perfect for WordPress Developers)**
-
-### **1. Positive Score Experiment**
+### 1. Positive Score Experiment
 Documents:  
 - “Python is great”  
 - “Java is fast”  
@@ -133,7 +123,7 @@ Documents:
 
 Query: **python** → positive score
 
-### **2. Negative Score Experiment**
+### 2. Negative Score Experiment
 Documents:  
 - “Programming in Python”  
 - “Programming in Java”  
@@ -141,7 +131,8 @@ Documents:
 
 Query: **programming** → negative scores
 
-### **3. Zero Score Experiment**
+### 3. Zero Score Experiment
+
 Documents:  
 - “Python programming”  
 - “Java coding”  
@@ -149,25 +140,21 @@ Documents:
 
 Query: **cooking recipes** → zero
 
----
-
-# 🧬 **BM25 vs TF‑IDF (A Quick Comparison)**
+## BM25 vs TF‑IDF 
 
 Students often ask this, so it’s worth adding:
 
-| Feature | TF‑IDF | BM25 |
-|--------|--------|------|
-| Term frequency | Linear | Saturates (diminishing returns) |
-| Document length | Not handled well | Normalized |
-| Ranking quality | Good | Better |
-| Negative scores | Yes | Yes |
-| Used in modern search engines | Rarely | Very common |
+|     Feature     |       TF‑I       |               BM2               |
+|-----------------|------------------|---------------------------------|
+| Term frequency  | Linear           | Saturates (diminishing returns) |
+| Document length | Not handled well | Normalized                      |
+| Ranking quality | Good             | Better                          |
+| Negative scores | Yes              | Yes                             |
+| Search engines  | Rarely           | Very common                     |
 
 BM25 is essentially a **smarter, more realistic TF‑IDF**.
 
----
-
-# 🧠 **Why BM25 Still Matters in 2026**
+## Why BM25 Still Matters in 2026
 
 Even with vector search, embeddings, and RAG:
 
@@ -179,9 +166,7 @@ Even with vector search, embeddings, and RAG:
 Your students will encounter BM25 everywhere:  
 Elasticsearch, OpenSearch, Meilisearch, Vespa, Solr, and even WordPress plugins.
 
----
-
-# 🎯 **Final Takeaways**
+## Final Takeaways
 
 - Negative BM25 scores are **normal**  
 - Zero means **no match**  
@@ -189,7 +174,6 @@ Elasticsearch, OpenSearch, Meilisearch, Vespa, Solr, and even WordPress plugins.
 - BM25 is ranking-focused, not absolute-value-focused  
 - Understanding IDF is the key to understanding everything else  
 
-If your students walk away with one sentence, make it this:
-
 > **BM25 doesn’t care whether scores are positive or negative — it only cares about which document is the best match.**
 
+<br>
